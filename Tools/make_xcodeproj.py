@@ -17,6 +17,7 @@ tvApp, saverBundle = uid("tvApp"), uid("saverBundle")
 bfTvSrc, bfSaverSrc = uid("bfTvSrc"), uid("bfSaverSrc")
 bfTvKit, bfTvUI, bfSaverKit, bfSaverUI = uid("bfTvKit"), uid("bfTvUI"), uid("bfSaverKit"), uid("bfSaverUI")
 grpMain, grpTV, grpSaver, grpProducts = uid("grpMain"), uid("grpTV"), uid("grpSaver"), uid("grpProducts")
+assetsRef, bfAssets, privRef, bfPriv = uid("assetsRef"), uid("bfAssets"), uid("privRef"), uid("bfPriv")
 proj = uid("proj")
 tvT, saverT = uid("tvT"), uid("saverT")
 tvSrcPh, tvFwPh, tvResPh = uid("tvSrcPh"), uid("tvFwPh"), uid("tvResPh")
@@ -47,6 +48,8 @@ files = f"""
 \t\t{bfExtSrc} /* ContentProvider.swift in Sources */ = {{isa = PBXBuildFile; fileRef = {extSrc}; }};
 \t\t{bfExtKit} /* LiveAirspaceKit in Frameworks */ = {{isa = PBXBuildFile; productRef = {prodKit3}; }};
 \t\t{bfCopyExt} /* Live Airspace Top Shelf.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {extRef}; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
+\t\t{bfAssets} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {assetsRef}; }};
+\t\t{bfPriv} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile; fileRef = {privRef}; }};
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -58,6 +61,8 @@ files = f"""
 \t\t{plistRef} /* Info-extra.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Config/Info-extra.plist; sourceTree = "<group>"; }};
 \t\t{extSrc} /* ContentProvider.swift */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProvider.swift; sourceTree = "<group>"; }};
 \t\t{extRef} /* Live Airspace Top Shelf.appex */ = {{isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Live Airspace Top Shelf.appex"; sourceTree = BUILT_PRODUCTS_DIR; }};
+\t\t{assetsRef} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; }};
+\t\t{privRef} /* PrivacyInfo.xcprivacy */ = {{isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; }};
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -76,7 +81,7 @@ files = f"""
 
 /* Begin PBXGroup section */
 \t\t{grpMain} = {{isa = PBXGroup; children = ({grpTV}, {grpExt}, {grpSaver}, {xcfgRef}, {plistRef}, {grpProducts}, ); sourceTree = "<group>"; }};
-\t\t{grpTV} /* LiveAirspaceTV */ = {{isa = PBXGroup; children = ({tvSrc}, ); path = LiveAirspaceTV; sourceTree = "<group>"; }};
+\t\t{grpTV} /* LiveAirspaceTV */ = {{isa = PBXGroup; children = ({tvSrc}, {assetsRef}, {privRef}, ); path = LiveAirspaceTV; sourceTree = "<group>"; }};
 \t\t{grpSaver} /* LiveAirspaceSaver */ = {{isa = PBXGroup; children = ({saverSrc}, ); path = LiveAirspaceSaver; sourceTree = "<group>"; }};
 \t\t{grpExt} /* LiveAirspaceTopShelf */ = {{isa = PBXGroup; children = ({extSrc}, ); path = LiveAirspaceTopShelf; sourceTree = "<group>"; }};
 \t\t{grpProducts} /* Products */ = {{isa = PBXGroup; children = ({tvRef}, {extRef}, {saverRef}, ); name = Products; sourceTree = "<group>"; }};
@@ -110,7 +115,7 @@ files = f"""
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
-\t\t{tvResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; }};
+\t\t{tvResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({bfAssets}, {bfPriv}, ); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{svResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{extResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; }};
 /* End PBXResourcesBuildPhase section */
@@ -134,12 +139,13 @@ tv = {"SDKROOT": "appletvos", "SUPPORTED_PLATFORMS": '"appletvos appletvsimulato
       "PRODUCT_NAME": '"Live Airspace"', "GENERATE_INFOPLIST_FILE": "YES", "CODE_SIGN_STYLE": "Automatic",
       "MARKETING_VERSION": "1.0", "CURRENT_PROJECT_VERSION": "1",
       "INFOPLIST_KEY_UILaunchScreen_Generation": "YES", "INFOPLIST_KEY_NSLocationWhenInUseUsageDescription": '"Centres the radar on the aircraft flying near your Apple TV."', "SWIFT_EMIT_LOC_STRINGS": "YES",
-      "CODE_SIGN_ENTITLEMENTS": "Config/App.entitlements"}
+      "CODE_SIGN_ENTITLEMENTS": "Config/App.entitlements",
+      "ASSETCATALOG_COMPILER_APPICON_NAME": '"App Icon & Top Shelf Image"', "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO"}
 ext = {"SDKROOT": "appletvos", "SUPPORTED_PLATFORMS": '"appletvos appletvsimulator"', "TARGETED_DEVICE_FAMILY": "3",
        "TVOS_DEPLOYMENT_TARGET": "17.0", "PRODUCT_BUNDLE_IDENTIFIER": "com.bureau.liveairspace.topshelf",
        "PRODUCT_NAME": '"Live Airspace Top Shelf"', "GENERATE_INFOPLIST_FILE": "YES", "INFOPLIST_FILE": "Config/TopShelf-Info.plist",
        "CODE_SIGN_STYLE": "Automatic", "MARKETING_VERSION": "1.0", "CURRENT_PROJECT_VERSION": "1",
-       "CODE_SIGN_ENTITLEMENTS": "Config/TopShelf.entitlements", "SKIP_INSTALL": "YES", "SWIFT_EMIT_LOC_STRINGS": "YES",
+       "CODE_SIGN_ENTITLEMENTS": "Config/TopShelf.entitlements", "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO", "SKIP_INSTALL": "YES", "SWIFT_EMIT_LOC_STRINGS": "YES",
        "LD_RUNPATH_SEARCH_PATHS": '"$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"'}
 saver = {"SDKROOT": "macosx", "SUPPORTED_PLATFORMS": "macosx", "MACOSX_DEPLOYMENT_TARGET": "14.0",
          "PRODUCT_BUNDLE_IDENTIFIER": "com.bureau.liveairspace.saver", "PRODUCT_NAME": '"Live Airspace"',

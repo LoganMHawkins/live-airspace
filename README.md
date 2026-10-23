@@ -48,6 +48,14 @@ Anonymous OpenSky allows ~400 requests/day (polled every 4 min). With your own A
 The app verifies the client with OpenSky, then keeps it in the device keychain. Nothing is stored in the app bundle or this repository.
 For command-line testing, `airspace-probe` reads `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET` from the environment.
 
+## TestFlight (Apple TV)
+1. In App Store Connect, create an app record: platform **tvOS**, bundle ID `com.bureau.liveairspace` (use your own if you changed it), any SKU.
+2. Run `Tools/testflight.sh`. It archives, signs for distribution and uploads (a new build number each time).
+3. In App Store Connect > TestFlight, wait for processing, then add testers: internal (App Store Connect users, no review) or an external group by email (needs Beta App Review).
+
+The Mac screen saver is not distributed through TestFlight; build and install the `.saver` directly.
+`Tools/make_tvos_icons.swift` regenerates the icon and Top Shelf artwork.
+
 ## Notes
 - tvOS has no third-party screen saver API. The tvOS app's ambient mode is the substitute; the Mac `.saver` is a real screen saver.
 - adsb.lol is limited to about 10 requests/min (polled every 10 s); adsb.fi every 5 s. Rate-limit replies are honoured via Retry-After.
