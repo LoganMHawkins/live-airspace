@@ -43,21 +43,22 @@ public struct LiveAirspaceView: View {
                     ZStack {
                         if let alert = store.activeAlert {
                             AlertBanner(alert: alert, scale: scale)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                                 .padding(.top, 150 * scale)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                                 .transition(.move(edge: .top).combined(with: .opacity))
                         }
                         if let focus {
                             InfoCard(aircraft: focus, details: store.details[focus.id], config: store.config,
                                      units: display.units, scale: scale, now: timeline.date)
-                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                                 .padding(56 * scale)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                         }
                     }
                     .animation(.easeInOut(duration: 0.4), value: store.activeAlert)
                     .offset(ambient ? ambientDrift(at: timeline.date, scale: scale) : .zero)
                 }
             }
+            .frame(width: geo.size.width, height: geo.size.height)
         }
         .background(Color(red: 0.01, green: 0.02, blue: 0.03))
         .ignoresSafeArea()
@@ -108,16 +109,23 @@ private struct MapLayer: View {
             latitudinalMeters: mapSize.height / pxPerNM * 1852,
             longitudinalMeters: mapSize.width / pxPerNM * 1852)
 
+        // The map is drawn larger than the screen (so drift never shows an edge) but sits in an overlay and is clipped,
+        // otherwise its oversize frame would stretch the whole stack and push the radar and cards off-screen.
         TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
             // In ambient mode the map slowly breathes between full and ~55% strength so no tile stays at one brightness.
             let t = timeline.date.timeIntervalSinceReferenceDate
             let breathe = ambient ? 0.775 + 0.225 * sin(t / 95) : 1
-            Map(position: .constant(.region(region)), interactionModes: [])
-                .mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll))
-                .environment(\.colorScheme, light ? .light : .dark)
-                .frame(width: mapSize.width, height: mapSize.height)
-                .opacity(opacity * breathe)
-                .offset(ambient ? ambientDrift(at: timeline.date, scale: scale) : .zero)
+            Color.clear
+                .overlay(
+                    Map(position: .constant(.region(region)), interactionModes: [])
+                        .mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll))
+                        .environment(\.colorScheme, light ? .light : .dark)
+                        .frame(width: mapSize.width, height: mapSize.height)
+                        .opacity(opacity * breathe)
+                        .offset(ambient ? ambientDrift(at: timeline.date, scale: scale) : .zero)
+                )
+                .frame(width: size.width, height: size.height)
+                .clipped()
                 .allowsHitTesting(false)
         }
     }
@@ -313,6 +321,8 @@ private struct Renderer {
         }
         // Reserve every aircraft icon so labels never cover a neighbour.
         var rects = result.map { CGRect(x: $0.point.x - s * 1.2, y: $0.point.y - s * 1.2, width: s * 2.4, height: s * 2.4) }
+        // Keep labels clear of the info card in the bottom-right corner (card is 568 wide and about 600 tall with a photo).
+        rects.append(CGRect(x: size.width - 56 * scale - 568 * scale, y: size.height - 56 * scale - 620 * scale, width: 568 * scale, height: 620 * scale))
         let bounds = CGRect(origin: .zero, size: size).insetBy(dx: 20 * scale, dy: 20 * scale)
 
         let order = result.indices.sorted { a, b in
