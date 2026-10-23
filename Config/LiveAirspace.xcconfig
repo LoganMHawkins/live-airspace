@@ -1,0 +1,3 @@
+// Shared build settings.
+// Your Apple developer team goes in Config/Local.xcconfig (gitignored); see Local.xcconfig.example.
+#include? "Local.xcconfig"

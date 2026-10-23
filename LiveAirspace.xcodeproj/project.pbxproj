@@ -1,0 +1,245 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		713696D091A4A8CB7A7FDC27 /* LiveAirspaceTVApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 718D1FA80F18A1F8533B92C1; };
+		6F9E8252511F5C323C43B5EC /* LiveAirspaceSaverView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 4B0FA5FCC5ACAB3729C889D6; };
+		E458DE707EB2F96A27379192 /* LiveAirspaceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 579B03206C3003BB2B0274CA; };
+		90F04954259B8B1017DDF8E9 /* LiveAirspaceUI in Frameworks */ = {isa = PBXBuildFile; productRef = 235DCE6835D1E7956E1756D8; };
+		039AACDF48B2E3F08464BEF4 /* LiveAirspaceKit in Frameworks */ = {isa = PBXBuildFile; productRef = D9FFE49F2C39843C83F09A26; };
+		49B5E24E7813D8F6C0F97F35 /* LiveAirspaceUI in Frameworks */ = {isa = PBXBuildFile; productRef = 50F393C91AE4335DEE429891; };
+		84F9FB37D1CCD4E7EEBA2800 /* ContentProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8976962897EA0D09E7B27E3F; };
+		F667317E961E2F0E855A1031 /* LiveAirspaceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 7EBB2F092305D75FCCACEBF0; };
+		86299DA2AA74B0DEA58460B8 /* Live Airspace Top Shelf.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3EC3B5D734CA6F7CDF940E08; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+/* End PBXBuildFile section */
+
+/* Begin PBXFileReference section */
+		718D1FA80F18A1F8533B92C1 /* LiveAirspaceTVApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAirspaceTVApp.swift; sourceTree = "<group>"; };
+		4B0FA5FCC5ACAB3729C889D6 /* LiveAirspaceSaverView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAirspaceSaverView.swift; sourceTree = "<group>"; };
+		57DC1F32CAF9BE729D170F65 /* Live Airspace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Live Airspace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		F397558CE482631953B6757D /* Live Airspace.saver */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = "Live Airspace.saver"; sourceTree = BUILT_PRODUCTS_DIR; };
+		AC0549BDB7E61C083806A77F /* LiveAirspace.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; path = Config/LiveAirspace.xcconfig; sourceTree = "<group>"; };
+		37A2D07D928BC5B946E119F3 /* Info-extra.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Config/Info-extra.plist; sourceTree = "<group>"; };
+		8976962897EA0D09E7B27E3F /* ContentProvider.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentProvider.swift; sourceTree = "<group>"; };
+		3EC3B5D734CA6F7CDF940E08 /* Live Airspace Top Shelf.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Live Airspace Top Shelf.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+/* End PBXFileReference section */
+
+/* Begin PBXContainerItemProxy section */
+		081F1A7804F9A8E7015244ED /* PBXContainerItemProxy */ = {isa = PBXContainerItemProxy; containerPortal = 4DC844ABCCFC0D132D087C1C /* Project object */; proxyType = 1; remoteGlobalIDString = 6731D68E48189E5A8CB50761; remoteInfo = "Live Airspace Top Shelf"; };
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		75BAFB06B5B4EE4EEA3CE025 /* Embed Foundation Extensions */ = {isa = PBXCopyFilesBuildPhase; buildActionMask = 2147483647; dstPath = ""; dstSubfolderSpec = 13; files = (86299DA2AA74B0DEA58460B8, ); name = "Embed Foundation Extensions"; runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		C411682B3FC61DD7777D2477 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (E458DE707EB2F96A27379192, 90F04954259B8B1017DDF8E9, ); runOnlyForDeploymentPostprocessing = 0; };
+		5BC998332D728EFC5C067615 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (039AACDF48B2E3F08464BEF4, 49B5E24E7813D8F6C0F97F35, ); runOnlyForDeploymentPostprocessing = 0; };
+		098C3CD9068B7E5452180106 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (F667317E961E2F0E855A1031, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		3D8222E143ACB5B89604F597 = {isa = PBXGroup; children = (7B759F0B4F1689D07580D23E, B6396B69580014EA04A0ACFC, 62A68380FA7741726A2256E6, AC0549BDB7E61C083806A77F, 37A2D07D928BC5B946E119F3, FCE477D1185A183028559B4D, ); sourceTree = "<group>"; };
+		7B759F0B4F1689D07580D23E /* LiveAirspaceTV */ = {isa = PBXGroup; children = (718D1FA80F18A1F8533B92C1, ); path = LiveAirspaceTV; sourceTree = "<group>"; };
+		62A68380FA7741726A2256E6 /* LiveAirspaceSaver */ = {isa = PBXGroup; children = (4B0FA5FCC5ACAB3729C889D6, ); path = LiveAirspaceSaver; sourceTree = "<group>"; };
+		B6396B69580014EA04A0ACFC /* LiveAirspaceTopShelf */ = {isa = PBXGroup; children = (8976962897EA0D09E7B27E3F, ); path = LiveAirspaceTopShelf; sourceTree = "<group>"; };
+		FCE477D1185A183028559B4D /* Products */ = {isa = PBXGroup; children = (57DC1F32CAF9BE729D170F65, 3EC3B5D734CA6F7CDF940E08, F397558CE482631953B6757D, ); name = Products; sourceTree = "<group>"; };
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		10FE4FD8030C4909E877340B /* Live Airspace (tvOS) */ = {
+			isa = PBXNativeTarget; buildConfigurationList = F6C7F1EB411F4A7C02571638; buildPhases = (1FBBE21EDB536AB1ED795D4D, C411682B3FC61DD7777D2477, 3F99A8752C58D7DB88249D1A, 75BAFB06B5B4EE4EEA3CE025, );
+			buildRules = (); dependencies = (2834AEE23555A3895545C3C4, ); name = "Live Airspace (tvOS)"; packageProductDependencies = (579B03206C3003BB2B0274CA, 235DCE6835D1E7956E1756D8, );
+			productName = LiveAirspaceTV; productReference = 57DC1F32CAF9BE729D170F65; productType = "com.apple.product-type.application";
+		};
+		7A9A533ED0CD68595B00FFEC /* Live Airspace (Screen Saver) */ = {
+			isa = PBXNativeTarget; buildConfigurationList = 97429D34B8E890612ADD0039; buildPhases = (AAFE4DCF6784ACA26C8576E4, 5BC998332D728EFC5C067615, 1B11EAD66C46BB894526C471, );
+			buildRules = (); dependencies = (); name = "Live Airspace (Screen Saver)"; packageProductDependencies = (D9FFE49F2C39843C83F09A26, 50F393C91AE4335DEE429891, );
+			productName = LiveAirspaceSaver; productReference = F397558CE482631953B6757D; productType = "com.apple.product-type.bundle";
+		};
+		6731D68E48189E5A8CB50761 /* Live Airspace Top Shelf */ = {
+			isa = PBXNativeTarget; buildConfigurationList = 672403F131F0631EA95AA052; buildPhases = (1FB05F79ACAACF09DD3FE93A, 098C3CD9068B7E5452180106, F390FE72D2414C160404CA8C, );
+			buildRules = (); dependencies = (); name = "Live Airspace Top Shelf"; packageProductDependencies = (7EBB2F092305D75FCCACEBF0, );
+			productName = LiveAirspaceTopShelf; productReference = 3EC3B5D734CA6F7CDF940E08; productType = "com.apple.product-type.tv-app-extension";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		4DC844ABCCFC0D132D087C1C /* Project object */ = {
+			isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2700; LastUpgradeCheck = 2700;};
+			buildConfigurationList = 5392007BFEC50494A0BF277A; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0;
+			knownRegions = (en, Base, ); mainGroup = 3D8222E143ACB5B89604F597; packageReferences = (A46A1BCE0B67C45BEC8F435B, ); productRefGroup = FCE477D1185A183028559B4D;
+			projectDirPath = ""; projectRoot = ""; targets = (10FE4FD8030C4909E877340B, 6731D68E48189E5A8CB50761, 7A9A533ED0CD68595B00FFEC, );
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		3F99A8752C58D7DB88249D1A /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		1B11EAD66C46BB894526C471 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		F390FE72D2414C160404CA8C /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		1FBBE21EDB536AB1ED795D4D /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (713696D091A4A8CB7A7FDC27, ); runOnlyForDeploymentPostprocessing = 0; };
+		AAFE4DCF6784ACA26C8576E4 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (6F9E8252511F5C323C43B5EC, ); runOnlyForDeploymentPostprocessing = 0; };
+		1FB05F79ACAACF09DD3FE93A /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (84F9FB37D1CCD4E7EEBA2800, ); runOnlyForDeploymentPostprocessing = 0; };
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2834AEE23555A3895545C3C4 /* PBXTargetDependency */ = {isa = PBXTargetDependency; target = 6731D68E48189E5A8CB50761; targetProxy = 081F1A7804F9A8E7015244ED; };
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		AA9D7673BB07B8772C053989 /* Debug */ = {isa = XCBuildConfiguration; buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				SWIFT_VERSION = 5.0;
+				GCC_NO_COMMON_BLOCKS = YES;
+				SDKROOT = auto;
+				ONLY_ACTIVE_ARCH = YES;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+			}; name = Debug; };
+		DB9C20A3A1CF18F01C25D9FB /* Release */ = {isa = XCBuildConfiguration; buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				SWIFT_VERSION = 5.0;
+				GCC_NO_COMMON_BLOCKS = YES;
+				SDKROOT = auto;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				VALIDATE_PRODUCT = YES;
+			}; name = Release; };
+		39DCF1B9106C85970CFD9D0C /* Debug */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace;
+				PRODUCT_NAME = "Live Airspace";
+				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Centres the radar on the aircraft flying near your Apple TV.";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				INFOPLIST_FILE = Config/Info-extra.plist;
+			}; name = Debug; };
+		B21D9D8EEDF6EF59D9B227FE /* Release */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace;
+				PRODUCT_NAME = "Live Airspace";
+				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Centres the radar on the aircraft flying near your Apple TV.";
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
+				INFOPLIST_FILE = Config/Info-extra.plist;
+			}; name = Release; };
+		1042CB002A7182A214B595BD /* Debug */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace.saver;
+				PRODUCT_NAME = "Live Airspace";
+				WRAPPER_EXTENSION = saver;
+				MACH_O_TYPE = mh_bundle;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPrincipalClass = LiveAirspaceSaverView;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace";
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @loader_path/../Frameworks";
+				SKIP_INSTALL = YES;
+				INFOPLIST_FILE = Config/Info-extra.plist;
+			}; name = Debug; };
+		CF6449F5021E876BE1766958 /* Release */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = macosx;
+				SUPPORTED_PLATFORMS = macosx;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace.saver;
+				PRODUCT_NAME = "Live Airspace";
+				WRAPPER_EXTENSION = saver;
+				MACH_O_TYPE = mh_bundle;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_NSPrincipalClass = LiveAirspaceSaverView;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace";
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @loader_path/../Frameworks";
+				SKIP_INSTALL = YES;
+				INFOPLIST_FILE = Config/Info-extra.plist;
+			}; name = Release; };
+		8C03164E04BB079EFE54C6B3 /* Debug */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace.topshelf;
+				PRODUCT_NAME = "Live Airspace Top Shelf";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/TopShelf-Info.plist;
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = Config/TopShelf.entitlements;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+			}; name = Debug; };
+		7FE3654935934A55BEEF41B5 /* Release */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = appletvos;
+				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
+				TARGETED_DEVICE_FAMILY = 3;
+				TVOS_DEPLOYMENT_TARGET = 17.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace.topshelf;
+				PRODUCT_NAME = "Live Airspace Top Shelf";
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Config/TopShelf-Info.plist;
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				CODE_SIGN_ENTITLEMENTS = Config/TopShelf.entitlements;
+				SKIP_INSTALL = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
+			}; name = Release; };
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		5392007BFEC50494A0BF277A = {isa = XCConfigurationList; buildConfigurations = (AA9D7673BB07B8772C053989, DB9C20A3A1CF18F01C25D9FB, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		F6C7F1EB411F4A7C02571638 = {isa = XCConfigurationList; buildConfigurations = (39DCF1B9106C85970CFD9D0C, B21D9D8EEDF6EF59D9B227FE, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		672403F131F0631EA95AA052 = {isa = XCConfigurationList; buildConfigurations = (8C03164E04BB079EFE54C6B3, 7FE3654935934A55BEEF41B5, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		97429D34B8E890612ADD0039 = {isa = XCConfigurationList; buildConfigurations = (1042CB002A7182A214B595BD, CF6449F5021E876BE1766958, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		A46A1BCE0B67C45BEC8F435B /* XCLocalSwiftPackageReference "." */ = {isa = XCLocalSwiftPackageReference; relativePath = .; };
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		579B03206C3003BB2B0274CA /* LiveAirspaceKit */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; };
+		235DCE6835D1E7956E1756D8 /* LiveAirspaceUI */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceUI; };
+		D9FFE49F2C39843C83F09A26 /* LiveAirspaceKit */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; };
+		50F393C91AE4335DEE429891 /* LiveAirspaceUI */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceUI; };
+		7EBB2F092305D75FCCACEBF0 /* LiveAirspaceKit */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; };
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 4DC844ABCCFC0D132D087C1C /* Project object */;
+}
