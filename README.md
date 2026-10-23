@@ -61,3 +61,6 @@ For command-line testing, `airspace-probe` reads `OPENSKY_CLIENT_ID` and `OPENSK
 - Aircraft and route details and photos: [adsbdb.com](https://www.adsbdb.com) (photos come from airport-data.com via adsbdb).
 - Airports: [OurAirports](https://ourairports.com/data/) (public domain), embedded by `Tools/make_airports.py`.
 - Map: Apple Maps via MapKit.
+
+## License
+MIT, see [LICENSE](LICENSE). Data from the services above is subject to their own terms.
