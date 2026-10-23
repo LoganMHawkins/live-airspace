@@ -140,12 +140,13 @@ tv = {"SDKROOT": "appletvos", "SUPPORTED_PLATFORMS": '"appletvos appletvsimulato
       "MARKETING_VERSION": "1.0", "CURRENT_PROJECT_VERSION": "1",
       "INFOPLIST_KEY_UILaunchScreen_Generation": "YES", "INFOPLIST_KEY_NSLocationWhenInUseUsageDescription": '"Centres the radar on the aircraft flying near your Apple TV."', "SWIFT_EMIT_LOC_STRINGS": "YES",
       "CODE_SIGN_ENTITLEMENTS": "Config/App.entitlements",
-      "ASSETCATALOG_COMPILER_APPICON_NAME": '"App Icon & Top Shelf Image"', "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO"}
+      "ASSETCATALOG_COMPILER_APPICON_NAME": '"App Icon & Top Shelf Image"', "INFOPLIST_KEY_CFBundleDisplayName": '"Live Airspace"', "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO"}
 ext = {"SDKROOT": "appletvos", "SUPPORTED_PLATFORMS": '"appletvos appletvsimulator"', "TARGETED_DEVICE_FAMILY": "3",
        "TVOS_DEPLOYMENT_TARGET": "17.0", "PRODUCT_BUNDLE_IDENTIFIER": "com.bureau.liveairspace.topshelf",
        "PRODUCT_NAME": '"Live Airspace Top Shelf"', "GENERATE_INFOPLIST_FILE": "YES", "INFOPLIST_FILE": "Config/TopShelf-Info.plist",
        "CODE_SIGN_STYLE": "Automatic", "MARKETING_VERSION": "1.0", "CURRENT_PROJECT_VERSION": "1",
-       "CODE_SIGN_ENTITLEMENTS": "Config/TopShelf.entitlements", "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO", "SKIP_INSTALL": "YES", "SWIFT_EMIT_LOC_STRINGS": "YES",
+       "CODE_SIGN_ENTITLEMENTS": "Config/TopShelf.entitlements", "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO",
+       "INFOPLIST_KEY_CFBundleDisplayName": '"Live Airspace Top Shelf"', "SKIP_INSTALL": "YES", "SWIFT_EMIT_LOC_STRINGS": "YES",
        "LD_RUNPATH_SEARCH_PATHS": '"$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"'}
 saver = {"SDKROOT": "macosx", "SUPPORTED_PLATFORMS": "macosx", "MACOSX_DEPLOYMENT_TARGET": "14.0",
          "PRODUCT_BUNDLE_IDENTIFIER": "com.bureau.liveairspace.saver", "PRODUCT_NAME": '"Live Airspace"',

@@ -136,6 +136,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_FILE = Config/Info-extra.plist;
 			}; name = Debug; };
@@ -155,6 +156,7 @@
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				CODE_SIGN_ENTITLEMENTS = Config/App.entitlements;
 				ASSETCATALOG_COMPILER_APPICON_NAME = "App Icon & Top Shelf Image";
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace";
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
 				INFOPLIST_FILE = Config/Info-extra.plist;
 			}; name = Release; };
@@ -208,6 +210,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				CODE_SIGN_ENTITLEMENTS = Config/TopShelf.entitlements;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace Top Shelf";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
@@ -226,6 +229,7 @@
 				CURRENT_PROJECT_VERSION = 1;
 				CODE_SIGN_ENTITLEMENTS = Config/TopShelf.entitlements;
 				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace Top Shelf";
 				SKIP_INSTALL = YES;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks";
