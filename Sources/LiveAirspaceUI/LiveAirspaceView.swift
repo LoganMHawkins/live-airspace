@@ -424,7 +424,8 @@ private struct Renderer {
         // Keep labels clear of the info card in the bottom-right corner (card is 568 wide and about 600 tall with a photo).
         let e = edge
         let cardW = min(568 * scale, size.width - e.l - e.r), cardH = (compact ? 330 : 620) * scale
-        rects.append(CGRect(x: size.width - e.r - cardW, y: size.height - e.b - cardH, width: cardW, height: cardH))
+        let cardRect = CGRect(x: size.width - e.r - cardW, y: size.height - e.b - cardH, width: cardW, height: cardH)
+        rects.append(cardRect)
         let bounds = CGRect(origin: .zero, size: size).insetBy(dx: 20 * scale, dy: 20 * scale)
 
         let order = result.indices.sorted { a, b in
@@ -444,15 +445,17 @@ private struct Renderer {
             let t2 = ctx.resolve(Text(l2).font(.system(size: 18 * scale, design: .monospaced)).foregroundColor(color.opacity(0.7)))
             let m1 = t1.measure(in: CGSize(width: 800, height: 100)), m2 = t2.measure(in: CGSize(width: 800, height: 100))
             let w = max(m1.width, m2.width), h = m1.height + (l2.isEmpty ? 0 : m2.height)
-            let p = result[i].point, gap = s * 1.4
+            // Sideways gaps are wider so the 6-point collision margin doesn't count the plane's own icon as an obstacle.
+            let p = result[i].point, gap = s * 1.4, gapX = s * 1.7
             let candidates = [
-                CGRect(x: p.x + gap, y: p.y - h / 2, width: w, height: h),
-                CGRect(x: p.x - gap - w, y: p.y - h / 2, width: w, height: h),
+                CGRect(x: p.x + gapX, y: p.y - h / 2, width: w, height: h),
+                CGRect(x: p.x - gapX - w, y: p.y - h / 2, width: w, height: h),
                 CGRect(x: p.x - w / 2, y: p.y - gap - h, width: w, height: h),
                 CGRect(x: p.x - w / 2, y: p.y + gap, width: w, height: h),
             ]
             let fit = candidates.first { r in bounds.contains(r) && !rects.contains { $0.intersects(r.insetBy(dx: -6 * scale, dy: -3 * scale)) } }
-            if let r = fit ?? (isFocus ? candidates[0] : nil) {
+            // The selected aircraft always gets a label; if nothing is free, at least keep it out from under the info card.
+            if let r = fit ?? (isFocus ? (candidates.first { !$0.intersects(cardRect) } ?? candidates[0]) : nil) {
                 result[i].labelRect = r
                 result[i].line1 = t1
                 result[i].line2 = l2.isEmpty ? nil : t2
