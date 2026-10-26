@@ -9,6 +9,15 @@ if let i = CommandLine.arguments.firstIndex(of: "--place"), i + 1 < CommandLine.
 // Optional OpenSky sign-in for the probe: OPENSKY_CLIENT_ID / OPENSKY_CLIENT_SECRET in the environment.
 let env = ProcessInfo.processInfo.environment
 let credentials = env["OPENSKY_CLIENT_ID"].flatMap { id in env["OPENSKY_CLIENT_SECRET"].map { OpenSkyCredentials(clientID: id, clientSecret: $0) } }
+// `airspace-probe --lookup ACA1040` tries the worldwide flight lookup used by Search.
+if let i = CommandLine.arguments.firstIndex(of: "--lookup"), i + 1 < CommandLine.arguments.count {
+    let outcome = await FeedLookup().lookup(CommandLine.arguments[i + 1])
+    print("lookup \(CommandLine.arguments[i + 1]): \(outcome.aircraft.count) aircraft\(outcome.rateLimited ? " (rate limited)" : "")")
+    for ac in outcome.aircraft.prefix(8) {
+        print("  \(ac.displayName) \(ac.typeCode ?? "—") \(ac.altitudeFt.map { "\(Int($0)) ft" } ?? "—") at \(String(format: "%.2f,%.2f", ac.latitude, ac.longitude)) via \(ac.sources.map(\.rawValue).joined(separator: "+"))")
+    }
+    exit(0)
+}
 let sources = AirspaceStore.defaultSources(openSky: credentials)
 let now = Date()
 

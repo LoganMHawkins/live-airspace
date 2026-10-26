@@ -37,6 +37,12 @@ public final class AirspaceStore: ObservableObject {
     @Published public private(set) var details: [String: AircraftDetails] = [:]
     /// The aircraft the info card is showing; nil means "whichever is nearest".
     @Published public private(set) var selectedID: String?
+    /// Sources currently switched on (the user can turn feeds off in Settings).
+    @Published public private(set) var enabledSources: [SourceID] = SourceID.allCases
+    /// Which aircraft are shown; changing it re-filters immediately.
+    public var filter = AircraftFilter() {
+        didSet { if filter != oldValue { refreshMerge() } }
+    }
     /// Rules to watch for; set by the app.
     public var watchRules: [WatchRule] = []
     /// A watch rule that just matched; clears itself after a while.
@@ -49,7 +55,9 @@ public final class AirspaceStore: ObservableObject {
         didSet {
             guard config != oldValue else { return }
             if config.center != oldValue.center {
-                restart(keepData: false)
+                // A short hop (panning, following a plane) keeps what's on screen while the feeds refetch; a jump clears it.
+                let hop = Geo.distanceNM(config.center, oldValue.center)
+                restart(keepData: hop <= 2 * max(config.radiusNM, oldValue.radiusNM))
             } else if config.radiusNM != oldValue.radiusNM {
                 restart(keepData: true)  // same place, new range: keep what's on screen while the feeds refetch
             }
@@ -61,6 +69,11 @@ public final class AirspaceStore: ObservableObject {
     private let enrichment: EnrichmentService?
     private var requestedDetails: Set<String> = []
     private var selectionSetAt = Date.distantPast
+    private var selectionGraceUntil = Date.distantPast
+    private var selectionPinned = false
+    private var disabled: Set<SourceID> = []
+    /// Aircraft found by a search that the feeds haven't reported yet, shown until the real data arrives.
+    private var injected: [String: (aircraft: Aircraft, added: Date)] = [:]
     private var merger = AirspaceMerger()
     private var latest: [SourceID: [SourceReport]] = [:]
     private var tasks: [Task<Void, Never>] = []
@@ -104,6 +117,23 @@ public final class AirspaceStore: ObservableObject {
         if wasRunning { start() }
     }
 
+    /// Turns one feed on or off without touching the others.
+    public func setSourceEnabled(_ id: SourceID, _ enabled: Bool) {
+        if enabled { disabled.remove(id) } else { disabled.insert(id) }
+        enabledSources = SourceID.allCases.filter { !disabled.contains($0) }
+        if !enabled {
+            latest[id] = nil
+            status[id] = nil
+        }
+        refreshMerge()
+    }
+
+    /// Shows an aircraft found by search straight away, before the feeds around its new location have answered.
+    public func inject(_ aircraft: Aircraft) {
+        injected[aircraft.id] = (aircraft, Date())
+        refreshMerge()
+    }
+
     public func stop() {
         tasks.forEach { $0.cancel() }
         tasks.removeAll()
@@ -116,11 +146,13 @@ public final class AirspaceStore: ObservableObject {
             latest.removeAll()
             trails.removeAll()
             requestedDetails.removeAll()
-            selectedID = nil
+            // A pinned selection (following an aircraft, or a search result) must survive jumping to where it is.
+            if !selectionPinned { selectedID = nil }
             alerted.removeAll()
             firstSeen.removeAll()
             activeAlert = nil
             aircraft = []
+            refreshMerge()  // shows any search-injected aircraft straight away
         }
         if wasRunning { start() }
     }
@@ -128,6 +160,10 @@ public final class AirspaceStore: ObservableObject {
     private func poll(_ source: any AirspaceSource) async {
         var failures = 0
         while !Task.isCancelled {
+            if disabled.contains(source.id) {
+                try? await Task.sleep(for: .seconds(2))
+                continue
+            }
             var wait = source.minimumInterval
             let center = config.center, radius = config.radiusNM
             do {
@@ -155,7 +191,11 @@ public final class AirspaceStore: ObservableObject {
 
     private func refreshMerge() {
         let now = Date()
-        aircraft = merger.merge(latest.values.flatMap { $0 }, now: now, reliability: reliability)
+        var merged = merger.merge(latest.filter { !disabled.contains($0.key) }.values.flatMap { $0 }, now: now, reliability: reliability)
+        let present = Set(merged.map(\.id))
+        injected = injected.filter { !present.contains($0.key) && now.timeIntervalSince($0.value.added) < 90 }
+        merged += injected.values.map(\.aircraft)
+        aircraft = merged.filter(filter.allows)
         updateReliability()
         updateFeedHealth(now: now)
         updateFocus(now: now)
@@ -192,9 +232,10 @@ public final class AirspaceStore: ObservableObject {
     // MARK: selection and details
 
     /// Airborne aircraft, nearest to the centre first.
-    public func aircraftByDistance(at now: Date = Date()) -> [Aircraft] {
-        aircraft.filter { !$0.onGround }
-            .sorted { Geo.distanceNM(config.center, $0.position(at: now)) < Geo.distanceNM(config.center, $1.position(at: now)) }
+    public func aircraftByDistance(from center: Coordinate? = nil, at now: Date = Date()) -> [Aircraft] {
+        let origin = center ?? config.center
+        return aircraft.filter { !$0.onGround }
+            .sorted { Geo.distanceNM(origin, $0.position(at: now)) < Geo.distanceNM(origin, $1.position(at: now)) }
     }
 
     /// The aircraft the info card shows: the selected one, else the nearest.
@@ -203,15 +244,21 @@ public final class AirspaceStore: ObservableObject {
         return aircraftByDistance().first
     }
 
-    /// Selects a specific aircraft (for example from a Top Shelf tile); it falls back to "nearest" if it isn't in range.
-    public func select(_ id: String) {
+    /// Selects a specific aircraft (a tap, search result or Top Shelf tile).
+    /// - Parameters:
+    ///   - pin: keep it selected indefinitely (used while the camera follows it) instead of reverting to "nearest" after a while.
+    ///   - grace: how long to wait for the feeds to report it before giving up if it isn't in range yet.
+    public func select(_ id: String, pin: Bool = false, grace: TimeInterval = 20) {
         selectedID = id
         selectionSetAt = Date()
+        selectionGraceUntil = Date().addingTimeInterval(grace)
+        selectionPinned = pin
     }
 
-    /// Back to following the nearest aircraft.
+    /// Back to showing the nearest aircraft.
     public func clearSelection() {
         selectedID = nil
+        selectionPinned = false
     }
 
     /// Moves the selection through the aircraft by distance (+1 farther, -1 nearer), wrapping around.
@@ -221,13 +268,20 @@ public final class AirspaceStore: ObservableObject {
         let current = list.firstIndex { $0.id == focus?.id } ?? 0
         selectedID = list[((current + step) % list.count + list.count) % list.count].id
         selectionSetAt = Date()
+        selectionGraceUntil = .distantPast
+        selectionPinned = false
         updateFocus(now: Date())
     }
 
     private func updateFocus(now: Date) {
         // Selection reverts to "nearest" after a while, or if the aircraft leaves.
-        if let id = selectedID, now.timeIntervalSince(selectionSetAt) > 90 || !aircraft.contains(where: { $0.id == id }) {
-            selectedID = nil
+        if let id = selectedID {
+            let expired = !selectionPinned && now.timeIntervalSince(selectionSetAt) > 90
+            let gone = now > selectionGraceUntil && !aircraft.contains(where: { $0.id == id })
+            if expired || gone {
+                selectedID = nil
+                selectionPinned = false
+            }
         }
         guard let enrichment else { return }
         var wanted = Array(aircraftByDistance(at: now).prefix(6))
@@ -257,8 +311,9 @@ public final class AirspaceStore: ObservableObject {
     }
 
     private func updateFeedHealth(now: Date) {
-        let down = sources.map(\.id).filter { !(status[$0]?.isLive(at: now) ?? false) }
-        let health: FeedHealth = down.isEmpty ? .live : (down.count == sources.count ? .down : .degraded(down: down))
+        let active = sources.map(\.id).filter { !disabled.contains($0) }
+        let down = active.filter { !(status[$0]?.isLive(at: now) ?? false) }
+        let health: FeedHealth = down.isEmpty ? .live : (down.count == active.count ? .down : .degraded(down: down))
         if health != feedHealth { feedHealth = health }
     }
 

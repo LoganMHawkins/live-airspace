@@ -95,6 +95,7 @@ public struct AirspaceMerger: Sendable {
             verticalRateFpm: ([lead] + used).lazy.compactMap(\.verticalRateFpm).first,
             onGround: onGroundVotes * 2 > used.count,
             squawk: used.lazy.compactMap(\.squawk).first,
+            category: ordered.lazy.compactMap(\.category).first,
             positionTime: lead.positionTime,
             sources: Array(Set(ordered.map(\.source))).sorted(),
             agreement: agreement,

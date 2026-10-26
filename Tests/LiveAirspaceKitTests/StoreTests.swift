@@ -87,4 +87,69 @@ final class StoreTests: XCTestCase {
         XCTAssertTrue(fired)
         XCTAssertEqual(store.activeAlert?.rule.label, "Air Canada")
     }
+
+    func testDisablingASourceRemovesItsAircraft() async {
+        let store = AirspaceStore(config: .default, sources: [
+            FakeSource(id: .adsbLol) { now in [report(.adsbLol, hex: "aaa111", now: now)] },
+            FakeSource(id: .adsbFi) { now in [report(.adsbFi, hex: "bbb222", now: now)] },
+        ], enrichment: nil)
+        store.start()
+        defer { store.stop() }
+        let both = await eventually { store.aircraft.count == 2 }
+        XCTAssertTrue(both)
+
+        store.setSourceEnabled(.adsbFi, false)
+        XCTAssertEqual(store.enabledSources, [.adsbLol, .openSky])
+        XCTAssertEqual(store.aircraft.map(\.id), ["aaa111"])
+        // A switched-off feed must not drag the health indicator down.
+        let live = await eventually { store.feedHealth != .down }
+        XCTAssertTrue(live)
+
+        store.setSourceEnabled(.adsbFi, true)
+        let back = await eventually { store.aircraft.count == 2 }
+        XCTAssertTrue(back)
+    }
+
+    func testInjectedAircraftShowsUntilTheFeedsReportIt() async {
+        let store = AirspaceStore(config: .default, sources: [], enrichment: nil)
+        let ac = Aircraft(id: "feed01", callsign: "FAR1", latitude: 45, longitude: -75, altitudeFt: 30_000, groundSpeedKt: 400, trackDeg: 90,
+                          positionTime: Date(), sources: [.adsbFi], agreement: .single)
+        store.inject(ac)
+        XCTAssertEqual(store.aircraft.map(\.id), ["feed01"])
+        store.select("feed01", pin: true)
+        XCTAssertEqual(store.focus?.id, "feed01")
+    }
+
+    func testStoreFilterAppliesImmediately() async {
+        let store = AirspaceStore(config: .default, sources: [
+            FakeSource(id: .adsbLol) { now in [report(.adsbLol, hex: "aaa111", now: now)] },
+        ], enrichment: nil)
+        store.start()
+        defer { store.stop() }
+        let ready = await eventually { store.aircraft.count == 1 }
+        XCTAssertTrue(ready)
+        var f = AircraftFilter()
+        f.minAltitudeFt = 40_000   // the test aircraft flies at 30,000
+        store.filter = f
+        XCTAssertTrue(store.aircraft.isEmpty)
+        store.filter = AircraftFilter()
+        XCTAssertEqual(store.aircraft.count, 1)
+    }
+
+    func testMovingTheViewKeepsDataButJumpingClearsIt() async {
+        let store = AirspaceStore(config: AirspaceConfig(name: "t", center: Coordinate(latitude: 45, longitude: -75), radiusNM: 40), sources: [
+            FakeSource(id: .adsbLol) { now in [report(.adsbLol, hex: "aaa111", lat: 45.0, lon: -75.0, now: now)] },
+        ], enrichment: nil)
+        store.start()
+        defer { store.stop() }
+        let ready = await eventually { store.aircraft.count == 1 }
+        XCTAssertTrue(ready)
+
+        // A short hop keeps what's on screen while the feeds refetch.
+        store.config = AirspaceConfig(name: "t", center: Coordinate(latitude: 45.2, longitude: -75), radiusNM: 40)
+        XCTAssertEqual(store.aircraft.count, 1)
+        // A long jump clears it.
+        store.config = AirspaceConfig(name: "far", center: Coordinate(latitude: 10, longitude: 10), radiusNM: 40)
+        XCTAssertTrue(store.aircraft.isEmpty)
+    }
 }

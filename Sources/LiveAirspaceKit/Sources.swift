@@ -95,6 +95,7 @@ public struct ReadsbSource: AirspaceSource {
                 groundSpeedKt: number(ac["gs"]), trackDeg: number(ac["track"]),
                 verticalRateFpm: number(ac["baro_rate"]) ?? number(ac["geom_rate"]),
                 onGround: onGround, squawk: clean(ac["squawk"] as? String),
+                category: clean(ac["category"] as? String),
                 positionTime: now.addingTimeInterval(-seenPos)
             )
         }

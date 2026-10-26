@@ -36,6 +36,8 @@ public struct SourceReport: Sendable, Equatable {
     public var verticalRateFpm: Double?
     public var onGround: Bool
     public var squawk: String?
+    /// ADS-B emitter category (A1 light … A5 heavy, A7 rotorcraft, B* balloon/glider/UAV…), when the feed provides it.
+    public var category: String?
     /// When the position fix was valid (not when it was downloaded).
     public var positionTime: Date
 
@@ -43,9 +45,10 @@ public struct SourceReport: Sendable, Equatable {
         icao24: String, source: SourceID, callsign: String? = nil, registration: String? = nil,
         typeCode: String? = nil, latitude: Double, longitude: Double, altitudeFt: Double? = nil,
         groundSpeedKt: Double? = nil, trackDeg: Double? = nil, verticalRateFpm: Double? = nil,
-        onGround: Bool = false, squawk: String? = nil, positionTime: Date
+        onGround: Bool = false, squawk: String? = nil, category: String? = nil, positionTime: Date
     ) {
         self.icao24 = icao24.lowercased()
+        self.category = category
         self.source = source
         self.callsign = callsign
         self.registration = registration
@@ -91,6 +94,7 @@ public struct Aircraft: Identifiable, Sendable, Equatable {
     public var verticalRateFpm: Double?
     public var onGround: Bool
     public var squawk: String?
+    public var category: String?
     public var positionTime: Date
     public var sources: [SourceID]
     public var agreement: Agreement
@@ -103,7 +107,7 @@ public struct Aircraft: Identifiable, Sendable, Equatable {
         id: String, callsign: String? = nil, registration: String? = nil, typeCode: String? = nil,
         latitude: Double, longitude: Double, altitudeFt: Double? = nil, groundSpeedKt: Double? = nil,
         trackDeg: Double? = nil, verticalRateFpm: Double? = nil, onGround: Bool = false,
-        squawk: String? = nil, positionTime: Date, sources: [SourceID], agreement: Agreement,
+        squawk: String? = nil, category: String? = nil, positionTime: Date, sources: [SourceID], agreement: Agreement,
         altitudeDisputed: Bool = false, outlierSource: SourceID? = nil
     ) {
         self.id = id
@@ -118,6 +122,7 @@ public struct Aircraft: Identifiable, Sendable, Equatable {
         self.verticalRateFpm = verticalRateFpm
         self.onGround = onGround
         self.squawk = squawk
+        self.category = category
         self.positionTime = positionTime
         self.sources = sources
         self.agreement = agreement
@@ -129,6 +134,21 @@ public struct Aircraft: Identifiable, Sendable, Equatable {
     public var confirmingSources: Int { sources.count - (outlierSource == nil ? 0 : 1) }
 
     public var displayName: String { callsign ?? registration ?? id.uppercased() }
+
+    public var isRotorcraft: Bool { category == "A7" }
+
+    /// Relative icon size: light aircraft smaller, heavies larger.
+    public var sizeFactor: Double {
+        switch category {
+        case "A1": return 0.75
+        case "A2": return 0.85
+        case "A4": return 1.05
+        case "A5": return 1.2
+        case "A7": return 0.9
+        case .some(let c) where c.hasPrefix("B"): return 0.8
+        default: return 1
+        }
+    }
 
     /// Dead-reckoned position at `date`, so motion stays smooth between polls.
     public func position(at date: Date, maxExtrapolation: TimeInterval = 90) -> Coordinate {
@@ -165,4 +185,54 @@ public struct AirspaceConfig: Sendable, Equatable, Codable {
     ]
 
     public static let `default` = presets[0]
+}
+
+
+/// A place the user has saved (from Search or Settings) to jump back to.
+public struct SavedPlace: Codable, Equatable, Identifiable, Sendable {
+    public var id: UUID
+    public var name: String
+    public var latitude: Double
+    public var longitude: Double
+    public var radiusNM: Double
+
+    public init(id: UUID = UUID(), name: String, latitude: Double, longitude: Double, radiusNM: Double = 40) {
+        self.id = id
+        self.name = name
+        self.latitude = latitude
+        self.longitude = longitude
+        self.radiusNM = radiusNM
+    }
+
+    public var coordinate: Coordinate { Coordinate(latitude: latitude, longitude: longitude) }
+}
+
+/// Which aircraft the display shows.
+public struct AircraftFilter: Codable, Equatable, Sendable {
+    /// Hide anything below this altitude (feet). 0 shows everything.
+    public var minAltitudeFt: Double = 0
+    /// Hide anything above this altitude (feet).
+    public var maxAltitudeFt: Double = 60_000
+    public var includeGround = false
+    public var onlyCrossChecked = false
+
+    public init() {}
+
+    enum CodingKeys: String, CodingKey { case minAltitudeFt, maxAltitudeFt, includeGround, onlyCrossChecked }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        minAltitudeFt = try c.decodeIfPresent(Double.self, forKey: .minAltitudeFt) ?? 0
+        maxAltitudeFt = try c.decodeIfPresent(Double.self, forKey: .maxAltitudeFt) ?? 60_000
+        includeGround = try c.decodeIfPresent(Bool.self, forKey: .includeGround) ?? false
+        onlyCrossChecked = try c.decodeIfPresent(Bool.self, forKey: .onlyCrossChecked) ?? false
+    }
+
+    public var isDefault: Bool { self == AircraftFilter() }
+
+    public func allows(_ ac: Aircraft) -> Bool {
+        if ac.onGround { return includeGround }
+        if onlyCrossChecked && ac.confirmingSources < 2 { return false }
+        if let alt = ac.altitudeFt, alt < minAltitudeFt || alt > maxAltitudeFt { return false }
+        return true
+    }
 }

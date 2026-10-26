@@ -12,7 +12,10 @@ public struct LiveAirspaceView: View {
     @ObservedObject var settings: AppSettings
     var ambient: Bool
     var controlsInset: CGFloat
-    @State private var pinchBase: Double?
+    /// Live gesture state: the map follows the finger immediately and is committed to the model when the gesture ends.
+    @State private var panOffset: CGSize = .zero
+    @State private var pinch: CGFloat = 1
+    @State private var wheelCommit: Task<Void, Never>?
 
     /// - Parameters:
     ///   - ambient: slowly drifts the HUD and map and dims static elements to protect OLED/plasma panels.
@@ -39,25 +42,27 @@ public struct LiveAirspaceView: View {
             let margin = 56 * scale
             let leading = margin + insets.leading, trailing = margin + insets.trailing
             let cardWidth = min(568 * scale, geo.size.width - leading - trailing)
-            ZStack {
-                if display.mapOpacity > 0 {
-                    MapLayer(config: store.config, size: geo.size, ambient: ambient, opacity: display.mapOpacity, light: display.lightMap)
-                }
-                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+            TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                let camera = model.cameraCenter(at: timeline.date)
+                ZStack {
+                    if display.mapOpacity > 0 {
+                        MapLayer(config: store.config, camera: camera, pan: panOffset, zoom: pinch, size: geo.size,
+                                 ambient: ambient, opacity: display.mapOpacity, style: display.mapStyle, now: timeline.date)
+                    }
                     Canvas { context, size in
                         Renderer(
                             context: context, size: size, now: timeline.date,
                             aircraft: store.aircraft, trails: store.trails, firstSeen: store.firstSeen,
                             status: store.status, reliability: store.reliability, feedHealth: store.feedHealth,
+                            enabledSources: store.enabledSources,
                             details: store.details, focusID: focus?.id,
-                            airports: display.showAirports ? AirportDatabase.near(store.config.center, radiusNM: store.config.radiusNM * 1.15) : [],
-                            config: store.config, display: display, ambient: ambient,
+                            airports: display.showAirports ? AirportDatabase.near(camera, radiusNM: store.config.radiusNM * 2) : [],
+                            config: store.config, camera: camera, pan: panOffset, zoom: pinch,
+                            display: display, ambient: ambient,
                             inset: insets, bottomExtra: controlsInset
                         ).draw()
                     }
-                }
-                // Cards ride the same slow drift as the radar.
-                TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
+                    // Cards ride the same slow drift as the radar.
                     ZStack {
                         if let alert = store.activeAlert {
                             AlertBanner(alert: alert, scale: scale)
@@ -66,10 +71,20 @@ public struct LiveAirspaceView: View {
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                                 .transition(.move(edge: .top).combined(with: .opacity))
                         }
+                        #if os(tvOS)
+                        if model.exploring {
+                            ExploreBanner(scale: scale)
+                                .padding(.top, 54 * scale)
+                                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        }
+                        #endif
                         if let focus {
                             InfoCard(aircraft: focus, details: store.details[focus.id], config: store.config,
                                      units: display.units, scale: scale, now: timeline.date,
-                                     width: cardWidth, compact: isCompact(geo.size))
+                                     width: cardWidth, compact: isCompact(geo.size),
+                                     following: model.followID == focus.id,
+                                     showDistance: model.followID == nil,
+                                     onFollow: { model.followID == focus.id ? model.stopFollowing() : model.follow(focus.id) })
                                 .padding(EdgeInsets(top: 0, leading: leading, bottom: margin + insets.bottom + controlsInset, trailing: trailing))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                         }
@@ -77,21 +92,22 @@ public struct LiveAirspaceView: View {
                     .animation(.easeInOut(duration: 0.4), value: store.activeAlert)
                     .offset(ambient ? ambientDrift(at: timeline.date, scale: scale) : .zero)
                 }
+                .frame(width: geo.size.width, height: geo.size.height)
+                .offset(x: -outer.safeAreaInsets.leading, y: -outer.safeAreaInsets.top)
+                #if !os(tvOS)
+                .contentShape(Rectangle())
+                .gesture(SpatialTapGesture().onEnded { select(at: $0.location, size: geo.size, camera: camera) })
+                .simultaneousGesture(DragGesture(minimumDistance: 8)
+                    .onChanged { panOffset = $0.translation }
+                    .onEnded { value in commitPan(value.translation, size: geo.size) })
+                .simultaneousGesture(MagnifyGesture()
+                    .onChanged { value in
+                        let r = store.config.radiusNM
+                        pinch = min(max(value.magnification, r / LiveAirspaceModel.maxRadiusNM), r / LiveAirspaceModel.minRadiusNM)
+                    }
+                    .onEnded { _ in commitPinch() })
+                #endif
             }
-            .frame(width: geo.size.width, height: geo.size.height)
-            .offset(x: -outer.safeAreaInsets.leading, y: -outer.safeAreaInsets.top)
-            #if !os(tvOS)
-            .contentShape(Rectangle())
-            // Tap an aircraft to select it (tap empty sky to go back to the nearest); pinch to change the range.
-            .gesture(SpatialTapGesture().onEnded { select(at: $0.location, size: geo.size) })
-            .gesture(MagnifyGesture()
-                .onChanged { value in
-                    let base = pinchBase ?? settings.data.radiusNM
-                    pinchBase = base
-                    settings.data.radiusNM = min(max((base / value.magnification).rounded(), 10), 150)
-                }
-                .onEnded { _ in pinchBase = nil })
-            #endif
         }
         .background(Color(red: 0.01, green: 0.02, blue: 0.03).ignoresSafeArea())
         .onAppear { store.start() }
@@ -99,13 +115,22 @@ public struct LiveAirspaceView: View {
         #if !os(tvOS)
         .focusable()
         .focusEffectDisabled()
-        .onKeyPress(.leftArrow) { store.cycleSelection(-1); return .handled }
-        .onKeyPress(.rightArrow) { store.cycleSelection(1); return .handled }
-        .onKeyPress(.upArrow) { model.zoom(in: true); return .handled }
-        .onKeyPress(.downArrow) { model.zoom(in: false); return .handled }
-        .onKeyPress(characters: CharacterSet(charactersIn: "+=")) { _ in model.zoom(in: true); return .handled }
-        .onKeyPress(characters: CharacterSet(charactersIn: "-_")) { _ in model.zoom(in: false); return .handled }
-        .onKeyPress(.escape) { store.clearSelection(); return .handled }
+        .onKeyPress(phases: [.down, .repeat]) { handleKey($0) }
+        #endif
+        #if os(macOS)
+        // Trackpad two-finger scroll pans; a mouse wheel zooms.
+        .background(ScrollMonitor { dx, dy, precise, ended in
+            if precise {
+                panOffset.width += dx
+                panOffset.height += dy
+                if ended { commitPan(panOffset, size: NSApp.keyWindow?.contentView?.bounds.size ?? CGSize(width: 1000, height: 700)) }
+            } else {
+                let r = store.config.radiusNM
+                pinch = min(max(pinch * exp(dy * 0.04), r / LiveAirspaceModel.maxRadiusNM), r / LiveAirspaceModel.minRadiusNM)
+                wheelCommit?.cancel()
+                wheelCommit = Task { try? await Task.sleep(for: .milliseconds(350)); if !Task.isCancelled { commitPinch() } }
+            }
+        })
         #endif
     }
 
@@ -119,22 +144,110 @@ public struct LiveAirspaceView: View {
     }
 
     #if !os(tvOS)
-    /// Selects the aircraft nearest the touch if it's within about a fingertip; otherwise clears the selection.
-    private func select(at point: CGPoint, size: CGSize) {
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+    private func commitPan(_ translation: CGSize, size: CGSize) {
+        panOffset = .zero
+        guard abs(translation.width) > 2 || abs(translation.height) > 2 else { return }
         let pxPerNM = min(size.width, size.height) / 2 * 0.86 / store.config.radiusNM
+        model.pan(eastNM: -translation.width / pxPerNM, northNM: translation.height / pxPerNM)
+    }
+
+    private func commitPinch() {
+        let zoom = pinch
+        pinch = 1
+        guard abs(zoom - 1) > 0.02 else { return }
+        model.setRadius(store.config.radiusNM / zoom)
+    }
+
+    /// Selects the aircraft nearest the touch if it's within about a fingertip; otherwise clears the selection.
+    private func select(at point: CGPoint, size: CGSize, camera: Coordinate) {
+        let center = CGPoint(x: size.width / 2 + panOffset.width, y: size.height / 2 + panOffset.height)
+        let pxPerNM = min(size.width, size.height) / 2 * 0.86 * pinch / store.config.radiusNM
         let now = Date()
         var best: (id: String, distance: CGFloat)?
         for ac in store.aircraft where !ac.onGround {
-            let o = Geo.offsetNM(from: store.config.center, to: ac.position(at: now))
+            let o = Geo.offsetNM(from: camera, to: ac.position(at: now))
             let p = CGPoint(x: center.x + o.east * pxPerNM, y: center.y - o.north * pxPerNM)
             let d = hypot(p.x - point.x, p.y - point.y)
             if d < 44, d < (best?.distance ?? .infinity) { best = (ac.id, d) }
         }
-        if let best { store.select(best.id) } else { store.clearSelection() }
+        if let best {
+            if model.followID != nil, model.followID != best.id { model.stopFollowing() }
+            store.select(best.id)
+            Haptics.selection()
+        } else {
+            store.clearSelection()
+        }
+    }
+
+    private func handleKey(_ press: KeyPress) -> KeyPress.Result {
+        let shift = press.modifiers.contains(.shift)
+        switch press.key {
+        case .leftArrow: if shift { model.panStep(dx: -1, dy: 0) } else { store.cycleSelection(-1) }
+        case .rightArrow: if shift { model.panStep(dx: 1, dy: 0) } else { store.cycleSelection(1) }
+        case .upArrow: if shift { model.panStep(dx: 0, dy: -1) } else { model.zoom(in: true) }
+        case .downArrow: if shift { model.panStep(dx: 0, dy: 1) } else { model.zoom(in: false) }
+        case .escape: model.stopFollowing(); store.clearSelection()
+        default:
+            switch press.characters {
+            case "+", "=": model.zoom(in: true)
+            case "-", "_": model.zoom(in: false)
+            case "0", "h": model.recenter()
+            case "f": if let id = store.focus?.id { model.followID == id ? model.stopFollowing() : model.follow(id) }
+            default: return .ignored
+            }
+        }
+        return .handled
     }
     #endif
 }
+
+#if os(macOS)
+import AppKit
+
+/// Reports scroll-wheel events over the window (SwiftUI has no scroll gesture on the Mac).
+private struct ScrollMonitor: NSViewRepresentable {
+    var handler: (_ dx: CGFloat, _ dy: CGFloat, _ precise: Bool, _ ended: Bool) -> Void
+
+    func makeNSView(context: Context) -> NSView {
+        let view = NSView()
+        context.coordinator.install(on: view)
+        return view
+    }
+
+    func updateNSView(_ view: NSView, context: Context) { context.coordinator.handler = handler }
+    func makeCoordinator() -> Coordinator { Coordinator(handler: handler) }
+    static func dismantleNSView(_ nsView: NSView, coordinator: Coordinator) { coordinator.remove() }
+
+    final class Coordinator {
+        var handler: (CGFloat, CGFloat, Bool, Bool) -> Void
+        private var monitor: Any?
+        init(handler: @escaping (CGFloat, CGFloat, Bool, Bool) -> Void) { self.handler = handler }
+
+        func install(on view: NSView) {
+            monitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self, weak view] event in
+                guard let self, let view, event.window === view.window else { return event }
+                // Ignore momentum after the fingers lift; the pan is committed when the touch phase ends.
+                if event.momentumPhase != [] { return event }
+                let ended = event.phase == .ended || event.phase == .cancelled
+                self.handler(event.scrollingDeltaX, event.scrollingDeltaY, event.hasPreciseScrollingDeltas, ended)
+                return event
+            }
+        }
+
+        func remove() { if let monitor { NSEvent.removeMonitor(monitor) }; monitor = nil }
+        deinit { remove() }
+    }
+}
+#endif
+
+#if canImport(UIKit) && !os(tvOS)
+/// A light tap when an aircraft is selected.
+enum Haptics {
+    static func selection() { UISelectionFeedbackGenerator().selectionChanged() }
+}
+#else
+enum Haptics { static func selection() {} }
+#endif
 
 // MARK: - shared bits
 
@@ -180,44 +293,50 @@ let disputedColor = Color(red: 1.0, green: 0.45, blue: 0.4)
 
 // MARK: - map
 
-/// Muted street map (dark by default) aligned to the radar's projection: radar centre = airspace centre, same nm-per-point scale.
+/// Map aligned to the radar's projection: radar centre = camera, same nm-per-point scale.
 private struct MapLayer: View {
     var config: AirspaceConfig
+    var camera: Coordinate
+    /// In-progress drag and pinch, applied as a transform so the map follows the finger before the view is committed.
+    var pan: CGSize
+    var zoom: CGFloat
     var size: CGSize
     var ambient: Bool
     var opacity: Double
-    var light: Bool
+    var style: MapStyleChoice
+    var now: Date
 
     var body: some View {
         let scale = displayScale(for: size)
-        // Oversized so the drift never exposes an edge.
+        // Oversized so drift and panning never expose an edge.
         let pad = 80 * scale
         let mapSize = CGSize(width: size.width + 2 * pad, height: size.height + 2 * pad)
         let pxPerNM = min(size.width, size.height) / 2 * 0.86 / config.radiusNM
         let region = MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: config.center.latitude, longitude: config.center.longitude),
-            latitudinalMeters: mapSize.height / pxPerNM * 1852,
-            longitudinalMeters: mapSize.width / pxPerNM * 1852)
+            center: CLLocationCoordinate2D(latitude: camera.latitude, longitude: camera.longitude),
+            latitudinalMeters: min(mapSize.height / pxPerNM * 1852, 20_000_000),
+            longitudinalMeters: min(mapSize.width / pxPerNM * 1852, 20_000_000))
+        // In ambient mode the map slowly breathes between full and ~55% strength so no tile stays at one brightness.
+        let t = now.timeIntervalSinceReferenceDate
+        let breathe = ambient ? 0.775 + 0.225 * sin(t / 95) : 1
 
-        // The map is drawn larger than the screen (so drift never shows an edge) but sits in an overlay and is clipped,
-        // otherwise its oversize frame would stretch the whole stack and push the radar and cards off-screen.
-        TimelineView(.animation(minimumInterval: 1.0 / 30)) { timeline in
-            // In ambient mode the map slowly breathes between full and ~55% strength so no tile stays at one brightness.
-            let t = timeline.date.timeIntervalSinceReferenceDate
-            let breathe = ambient ? 0.775 + 0.225 * sin(t / 95) : 1
-            Color.clear
-                .overlay(
-                    Map(position: .constant(.region(region)), interactionModes: [])
-                        .mapStyle(.standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll))
-                        .environment(\.colorScheme, light ? .light : .dark)
-                        .frame(width: mapSize.width, height: mapSize.height)
-                        .opacity(opacity * breathe)
-                        .offset(ambient ? ambientDrift(at: timeline.date, scale: scale) : .zero)
-                )
-                .frame(width: size.width, height: size.height)
-                .clipped()
-                .allowsHitTesting(false)
-        }
+        // The map sits in an overlay and is clipped, otherwise its oversize frame would stretch the whole stack
+        // and push the radar and cards off-screen.
+        Color.clear
+            .overlay(
+                Map(position: .constant(.region(region)), interactionModes: [])
+                    .mapStyle(style == .satellite ? .hybrid(elevation: .flat, pointsOfInterest: .excludingAll)
+                                                  : .standard(elevation: .flat, emphasis: .muted, pointsOfInterest: .excludingAll))
+                    .environment(\.colorScheme, style == .light ? .light : .dark)
+                    .frame(width: mapSize.width, height: mapSize.height)
+                    .scaleEffect(zoom)
+                    .opacity(opacity * breathe)
+                    .offset(CGSize(width: pan.width + (ambient ? ambientDrift(at: now, scale: scale).width : 0),
+                                   height: pan.height + (ambient ? ambientDrift(at: now, scale: scale).height : 0)))
+            )
+            .frame(width: size.width, height: size.height)
+            .clipped()
+            .allowsHitTesting(false)
     }
 }
 
@@ -242,6 +361,22 @@ private struct AlertBanner: View {
     }
 }
 
+#if os(tvOS)
+private struct ExploreBanner: View {
+    var scale: CGFloat
+    var body: some View {
+        HStack(spacing: 16 * scale) {
+            Image(systemName: "hand.draw").font(.system(size: 30 * scale))
+            Text("EXPLORE  ·  arrows pan  ·  ⏯ zoom  ·  Select for menu")
+                .font(.system(size: 22 * scale, weight: .semibold, design: .monospaced))
+        }
+        .foregroundColor(.black)
+        .padding(.horizontal, 28 * scale).padding(.vertical, 14 * scale)
+        .background(Capsule().fill(ink))
+    }
+}
+#endif
+
 private struct InfoCard: View {
     var aircraft: Aircraft
     var details: AircraftDetails?
@@ -251,6 +386,9 @@ private struct InfoCard: View {
     var now: Date
     var width: CGFloat
     var compact: Bool
+    var following = false
+    var showDistance = true
+    var onFollow: () -> Void = {}
 
     var body: some View {
         let color = aircraft.agreement.isDisputed ? disputedColor : altitudeColor(aircraft.altitudeFt)
@@ -277,6 +415,28 @@ private struct InfoCard: View {
                 if let fn = details?.flightNumber, fn != aircraft.callsign {
                     Text(fn).font(.system(size: 26 * scale, design: .monospaced)).foregroundColor(ink.opacity(0.6))
                 }
+                #if !os(tvOS)
+                Spacer(minLength: 0)
+                Button(action: onFollow) {
+                    Image(systemName: following ? "location.fill" : "location")
+                        .font(.system(size: 20 * max(scale, 0.8), weight: .semibold))
+                        .foregroundStyle(following ? Color.black : color)
+                        .padding(8)
+                        .background(Circle().fill(following ? color : color.opacity(0.18)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel(following ? "Stop following" : "Follow this aircraft")
+                .help(following ? "Stop following" : "Follow this aircraft")
+                ShareLink(item: shareText) {
+                    Image(systemName: "square.and.arrow.up")
+                        .font(.system(size: 20 * max(scale, 0.8), weight: .semibold))
+                        .foregroundStyle(color)
+                        .padding(8)
+                        .background(Circle().fill(color.opacity(0.18)))
+                }
+                .buttonStyle(.plain)
+                .accessibilityLabel("Share")
+                #endif
             }
             if let airline = details?.airline ?? details?.operatorName {
                 Text(airline).font(.system(size: 26 * scale, weight: .medium)).foregroundColor(.white.opacity(0.85))
@@ -293,7 +453,7 @@ private struct InfoCard: View {
             if !typeLine.isEmpty {
                 Text(typeLine).font(.system(size: 22 * scale, design: .monospaced)).foregroundColor(.white.opacity(0.7)).lineLimit(1)
             }
-            Text(stats(distance: distance)).font(.system(size: 22 * scale, design: .monospaced)).foregroundColor(color.opacity(0.9))
+            Text(stats(distance: showDistance ? distance : nil)).font(.system(size: 22 * scale, design: .monospaced)).foregroundColor(color.opacity(0.9))
             Text(crossCheck).font(.system(size: 18 * scale, design: .monospaced))
                 .foregroundColor(aircraft.agreement.isDisputed ? disputedColor : ink.opacity(0.55))
         }
@@ -303,13 +463,22 @@ private struct InfoCard: View {
         .overlay(RoundedRectangle(cornerRadius: 22 * scale).stroke(color.opacity(0.35), lineWidth: 1.5 * scale))
     }
 
-    private func stats(distance: Double) -> String {
+    private func stats(distance: Double?) -> String {
         var parts: [String] = []
         if let alt = aircraft.altitudeFt { parts.append(units.altitude(alt) + (aircraft.altitudeDisputed ? "?" : "")) }
         if let gs = aircraft.groundSpeedKt { parts.append(units.speed(gs)) }
         if let vr = aircraft.verticalRateFpm, abs(vr) > 300 { parts.append((vr > 0 ? "↑ " : "↓ ") + units.rate(vr)) }
-        parts.append(units.distance(distance))
+        if let distance { parts.append(units.distance(distance)) }
         return parts.joined(separator: " · ")
+    }
+
+    private var shareText: String {
+        var parts = [aircraft.displayName]
+        if let airline = details?.airline { parts.append(airline) }
+        if let o = details?.origin, let d = details?.destination { parts.append("\(o.code) to \(d.code)") }
+        if let type = details?.typeName ?? aircraft.typeCode { parts.append(type) }
+        if let alt = aircraft.altitudeFt { parts.append(units.altitude(alt)) }
+        return parts.joined(separator: " · ") + " — spotted on Live Airspace"
     }
 
     private var crossCheck: String {
@@ -337,10 +506,15 @@ private struct Renderer {
     var status: [SourceID: SourceStatus]
     var reliability: [SourceID: Double]
     var feedHealth: FeedHealth
+    var enabledSources: [SourceID]
     var details: [String: AircraftDetails]
     var focusID: String?
     var airports: [Airport]
     var config: AirspaceConfig
+    /// Where the radar is looking, which can differ from `config.center` while following an aircraft.
+    var camera: Coordinate
+    var pan: CGSize
+    var zoom: CGFloat
     var display: DisplaySettings
     var ambient: Bool
     var inset: EdgeInsets
@@ -368,12 +542,12 @@ private struct Renderer {
         var ctx = context
         ctx.translateBy(x: drift.width, y: drift.height)
 
-        let center = CGPoint(x: size.width / 2, y: size.height / 2)
-        let radiusPx = min(size.width, size.height) / 2 * 0.86
+        let center = CGPoint(x: size.width / 2 + pan.width, y: size.height / 2 + pan.height)
+        let radiusPx = min(size.width, size.height) / 2 * 0.86 * zoom
         let pxPerNM = radiusPx / config.radiusNM
 
         func point(_ c: Coordinate) -> CGPoint {
-            let o = Geo.offsetNM(from: config.center, to: c)
+            let o = Geo.offsetNM(from: camera, to: c)
             return CGPoint(x: center.x + o.east * pxPerNM, y: center.y - o.north * pxPerNM)
         }
 
@@ -414,7 +588,7 @@ private struct Renderer {
 
     /// Places labels greedily, nearest aircraft first, trying right/left/above/below and skipping any that would overlap.
     private func layout(_ visible: [Aircraft], point: (Coordinate) -> CGPoint, ctx: GraphicsContext) -> [Placed] {
-        let byDistance = visible.sorted { Geo.distanceNM(config.center, $0.position(at: now)) < Geo.distanceNM(config.center, $1.position(at: now)) }
+        let byDistance = visible.sorted { Geo.distanceNM(camera, $0.position(at: now)) < Geo.distanceNM(camera, $1.position(at: now)) }
         let s = 20 * scale
         var result: [Placed] = byDistance.map {
             Placed(ac: $0, point: point($0.position(at: now)), focus: $0.id == focusID)
@@ -437,6 +611,7 @@ private struct Renderer {
             switch display.labels {
             case .off where !isFocus: continue
             case .nearest where !isFocus && rank >= 5: continue
+            case .all where !isFocus && rank >= (config.radiusNM > 100 ? 25 : 60): continue  // measuring text for hundreds of labels every frame is too slow
             default: break
             }
             let (l1, l2) = labelStrings(result[i].ac)
@@ -559,7 +734,7 @@ private struct Renderer {
     private func drawAircraft(_ ctx: inout GraphicsContext, _ placed: Placed) {
         let ac = placed.ac, p = placed.point
         let c = ac.agreement.isDisputed ? disputedColor : altitudeColor(ac.altitudeFt)
-        let s = 20 * scale
+        let s = 20 * scale * CGFloat(ac.sizeFactor)  // light aircraft smaller, heavies larger
         let age = firstSeen[ac.id].map { now.timeIntervalSince($0) } ?? 99
         var layer = ctx
         layer.opacity = min(1, max(0.0, age / 1.5))   // fade in when first seen
@@ -587,7 +762,21 @@ private struct Renderer {
         var g = layer
         g.translateBy(x: p.x, y: p.y)
         g.rotate(by: .degrees(ac.trackDeg ?? 0))
-        g.fill(plane, with: .color(c))
+        if ac.isRotorcraft {
+            // Helicopter: fuselage, tail boom and a spinning rotor.
+            var body = Path(ellipseIn: CGRect(x: -s * 0.32, y: -s * 0.55, width: s * 0.64, height: s * 1.0))
+            body.addRect(CGRect(x: -s * 0.07, y: s * 0.35, width: s * 0.14, height: s * 0.85))
+            body.addRect(CGRect(x: -s * 0.3, y: s * 1.05, width: s * 0.6, height: s * 0.12))
+            g.fill(body, with: .color(c))
+            var rotor = g
+            rotor.rotate(by: .radians(now.timeIntervalSinceReferenceDate * 9))
+            var blades = Path()
+            blades.move(to: CGPoint(x: -s * 1.05, y: 0)); blades.addLine(to: CGPoint(x: s * 1.05, y: 0))
+            blades.move(to: CGPoint(x: 0, y: -s * 1.05)); blades.addLine(to: CGPoint(x: 0, y: s * 1.05))
+            rotor.stroke(blades, with: .color(c.opacity(0.7)), lineWidth: 2 * scale)
+        } else {
+            g.fill(plane, with: .color(c))
+        }
 
         // Cross-check ring: solid when sources agree (stronger for 3), dashed red when they don't.
         let ring = Path(ellipseIn: CGRect(x: p.x - s * 1.5, y: p.y - s * 1.5, width: s * 3, height: s * 3))
@@ -636,7 +825,7 @@ private struct Renderer {
 
         // Source health, with how often each source has been the odd one out.
         var y = e.t
-        for id in SourceID.allCases.reversed() {
+        for id in enabledSources.reversed() {
             let st = status[id]
             let live = st?.isLive(at: now) ?? false
             let dot = live ? Color(red: 0.4, green: 0.95, blue: 0.6) : Color(red: 1, green: 0.5, blue: 0.4)
