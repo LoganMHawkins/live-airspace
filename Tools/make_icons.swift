@@ -1,6 +1,7 @@
 #!/usr/bin/env swift
-// Generates LiveAirspaceTV/Assets.xcassets: the layered tvOS app icon and the Top Shelf images.
-// Usage: swift Tools/make_tvos_icons.swift   (run from the repo root)
+// Generates the app artwork: LiveAirspaceTV/Assets.xcassets (layered tvOS icon and Top Shelf images)
+// and LiveAirspaceApp/Assets.xcassets (iOS and macOS AppIcon).
+// Usage: swift Tools/make_icons.swift   (run from the repo root)
 import CoreGraphics
 import CoreText
 import Foundation
@@ -167,4 +168,33 @@ imagestack("\(brand)/App Icon - App Store.imagestack", w: 1280, h: 768, twoX: fa
 imagestack("\(brand)/App Icon.imagestack", w: 400, h: 240, twoX: true)
 imageset("\(brand)/Top Shelf Image.imageset", name: "TopShelf", sizes: [("1x", 1920, 720), ("2x", 3840, 1440)], draw: topShelf, opaque: true)
 imageset("\(brand)/Top Shelf Image Wide.imageset", name: "TopShelfWide", sizes: [("1x", 2320, 720), ("2x", 4640, 1440)], draw: topShelf, opaque: true)
-print("wrote \(root)")
+
+// MARK: iPhone, iPad and Mac app icon
+
+/// One square icon: all three tvOS layers stacked. `mac` draws the rounded-square-with-margin shape macOS expects;
+/// iOS wants a full-bleed opaque square that the system masks itself.
+func appIcon(_ c: CGContext, _ w: CGFloat, _ h: CGFloat, mac: Bool) {
+    if mac {
+        let inset = w * 100 / 1024, side = w - 2 * inset
+        c.translateBy(x: inset, y: inset)
+        c.addPath(CGPath(roundedRect: CGRect(x: 0, y: 0, width: side, height: side), cornerWidth: side * 0.2237, cornerHeight: side * 0.2237, transform: nil))
+        c.clip()
+        for layer in [Layer.back, .middle, .front] { icon(layer, c, side, side) }
+    } else {
+        for layer in [Layer.back, .middle, .front] { icon(layer, c, w, h) }
+    }
+}
+
+let appRoot = "LiveAirspaceApp/Assets.xcassets"
+let iconSet = "\(appRoot)/AppIcon.appiconset"
+try? FileManager.default.removeItem(atPath: appRoot)
+write("\(appRoot)/Contents.json", "{\n  \(info)\n}\n")
+png("\(iconSet)/ios-1024.png", 1024, 1024, opaque: true) { appIcon($0, $1, $2, mac: false) }
+var iconImages = [#"{ "filename" : "ios-1024.png", "idiom" : "universal", "platform" : "ios", "size" : "1024x1024" }"#]
+for (points, scale) in [(16, 1), (16, 2), (32, 1), (32, 2), (128, 1), (128, 2), (256, 1), (256, 2), (512, 1), (512, 2)] {
+    let px = points * scale, file = "mac-\(px).png"
+    if !FileManager.default.fileExists(atPath: "\(iconSet)/\(file)") { png("\(iconSet)/\(file)", px, px, opaque: false) { appIcon($0, $1, $2, mac: true) } }
+    iconImages.append(#"{ "filename" : "\#(file)", "idiom" : "mac", "scale" : "\#(scale)x", "size" : "\#(points)x\#(points)" }"#)
+}
+write("\(iconSet)/Contents.json", "{\n  \"images\" : [\n    \(iconImages.joined(separator: ",\n    "))\n  ],\n  \(info)\n}\n")
+print("wrote \(root) and \(appRoot)")

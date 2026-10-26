@@ -18,6 +18,11 @@
 		86299DA2AA74B0DEA58460B8 /* Live Airspace Top Shelf.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3EC3B5D734CA6F7CDF940E08; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		2B4A2C08D382ED0CB67D3F18 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = FCB8953AE57039F8C975994A; };
 		9B30B956CDFF2769336D54E2 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 4FA83E5AC80AB27CA91A5CA9; };
+		142339A0164D0C5FB166A49D /* LiveAirspaceApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1B9182241EBC610BD8CBDC0; };
+		5E6596B2C5C464111CDAEB5E /* LiveAirspaceKit in Frameworks */ = {isa = PBXBuildFile; productRef = 837128E267149B057AFAA0AD; };
+		68F6FA82C9DE1E2AAFA4514F /* LiveAirspaceUI in Frameworks */ = {isa = PBXBuildFile; productRef = E7A3EB18DD4DB4C3B4C246A5; };
+		4FF6C53FF546D2FDA2F04BDA /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 53E8E7CA2ADDBD08ED09D548; };
+		60F00EF1976AB23ADF4302E1 /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 5357ACBF1D0392A0B29BD2F2; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -31,6 +36,10 @@
 		3EC3B5D734CA6F7CDF940E08 /* Live Airspace Top Shelf.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Live Airspace Top Shelf.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		FCB8953AE57039F8C975994A /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		4FA83E5AC80AB27CA91A5CA9 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		E1B9182241EBC610BD8CBDC0 /* LiveAirspaceApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAirspaceApp.swift; sourceTree = "<group>"; };
+		53E8E7CA2ADDBD08ED09D548 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		5357ACBF1D0392A0B29BD2F2 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		180CFCDE7A6EA1DFCE54D3F2 /* Live Airspace.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Live Airspace.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -45,14 +54,16 @@
 		C411682B3FC61DD7777D2477 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (E458DE707EB2F96A27379192, 90F04954259B8B1017DDF8E9, ); runOnlyForDeploymentPostprocessing = 0; };
 		5BC998332D728EFC5C067615 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (039AACDF48B2E3F08464BEF4, 49B5E24E7813D8F6C0F97F35, ); runOnlyForDeploymentPostprocessing = 0; };
 		098C3CD9068B7E5452180106 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (F667317E961E2F0E855A1031, ); runOnlyForDeploymentPostprocessing = 0; };
+		A298891719692C09E6FBA6C9 /* Frameworks */ = {isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (5E6596B2C5C464111CDAEB5E, 68F6FA82C9DE1E2AAFA4514F, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-		3D8222E143ACB5B89604F597 = {isa = PBXGroup; children = (7B759F0B4F1689D07580D23E, B6396B69580014EA04A0ACFC, 62A68380FA7741726A2256E6, AC0549BDB7E61C083806A77F, 37A2D07D928BC5B946E119F3, FCE477D1185A183028559B4D, ); sourceTree = "<group>"; };
+		3D8222E143ACB5B89604F597 = {isa = PBXGroup; children = (6CB77480E0F0214B7AC1764B, 7B759F0B4F1689D07580D23E, B6396B69580014EA04A0ACFC, 62A68380FA7741726A2256E6, AC0549BDB7E61C083806A77F, 37A2D07D928BC5B946E119F3, FCE477D1185A183028559B4D, ); sourceTree = "<group>"; };
 		7B759F0B4F1689D07580D23E /* LiveAirspaceTV */ = {isa = PBXGroup; children = (718D1FA80F18A1F8533B92C1, FCB8953AE57039F8C975994A, 4FA83E5AC80AB27CA91A5CA9, ); path = LiveAirspaceTV; sourceTree = "<group>"; };
 		62A68380FA7741726A2256E6 /* LiveAirspaceSaver */ = {isa = PBXGroup; children = (4B0FA5FCC5ACAB3729C889D6, ); path = LiveAirspaceSaver; sourceTree = "<group>"; };
 		B6396B69580014EA04A0ACFC /* LiveAirspaceTopShelf */ = {isa = PBXGroup; children = (8976962897EA0D09E7B27E3F, ); path = LiveAirspaceTopShelf; sourceTree = "<group>"; };
-		FCE477D1185A183028559B4D /* Products */ = {isa = PBXGroup; children = (57DC1F32CAF9BE729D170F65, 3EC3B5D734CA6F7CDF940E08, F397558CE482631953B6757D, ); name = Products; sourceTree = "<group>"; };
+		6CB77480E0F0214B7AC1764B /* LiveAirspaceApp */ = {isa = PBXGroup; children = (E1B9182241EBC610BD8CBDC0, 53E8E7CA2ADDBD08ED09D548, 5357ACBF1D0392A0B29BD2F2, ); path = LiveAirspaceApp; sourceTree = "<group>"; };
+		FCE477D1185A183028559B4D /* Products */ = {isa = PBXGroup; children = (180CFCDE7A6EA1DFCE54D3F2, 57DC1F32CAF9BE729D170F65, 3EC3B5D734CA6F7CDF940E08, F397558CE482631953B6757D, ); name = Products; sourceTree = "<group>"; };
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -71,6 +82,11 @@
 			buildRules = (); dependencies = (); name = "Live Airspace Top Shelf"; packageProductDependencies = (7EBB2F092305D75FCCACEBF0, );
 			productName = LiveAirspaceTopShelf; productReference = 3EC3B5D734CA6F7CDF940E08; productType = "com.apple.product-type.tv-app-extension";
 		};
+		098626D8DEA09A394DFC8F0D /* Live Airspace (iOS & macOS) */ = {
+			isa = PBXNativeTarget; buildConfigurationList = 554159F5E49DB8E16D3B3631; buildPhases = (7834CB4EB55EB340EC765364, A298891719692C09E6FBA6C9, AEBDCA4DD68E086DF4B30718, );
+			buildRules = (); dependencies = (); name = "Live Airspace (iOS & macOS)"; packageProductDependencies = (837128E267149B057AFAA0AD, E7A3EB18DD4DB4C3B4C246A5, );
+			productName = LiveAirspaceApp; productReference = 180CFCDE7A6EA1DFCE54D3F2; productType = "com.apple.product-type.application";
+		};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -78,7 +94,7 @@
 			isa = PBXProject; attributes = {BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2700; LastUpgradeCheck = 2700;};
 			buildConfigurationList = 5392007BFEC50494A0BF277A; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0;
 			knownRegions = (en, Base, ); mainGroup = 3D8222E143ACB5B89604F597; packageReferences = (A46A1BCE0B67C45BEC8F435B, ); productRefGroup = FCE477D1185A183028559B4D;
-			projectDirPath = ""; projectRoot = ""; targets = (10FE4FD8030C4909E877340B, 6731D68E48189E5A8CB50761, 7A9A533ED0CD68595B00FFEC, );
+			projectDirPath = ""; projectRoot = ""; targets = (098626D8DEA09A394DFC8F0D, 10FE4FD8030C4909E877340B, 6731D68E48189E5A8CB50761, 7A9A533ED0CD68595B00FFEC, );
 		};
 /* End PBXProject section */
 
@@ -86,12 +102,14 @@
 		3F99A8752C58D7DB88249D1A /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (2B4A2C08D382ED0CB67D3F18, 9B30B956CDFF2769336D54E2, ); runOnlyForDeploymentPostprocessing = 0; };
 		1B11EAD66C46BB894526C471 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
 		F390FE72D2414C160404CA8C /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+		AEBDCA4DD68E086DF4B30718 /* Resources */ = {isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (4FF6C53FF546D2FDA2F04BDA, 60F00EF1976AB23ADF4302E1, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 		1FBBE21EDB536AB1ED795D4D /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (713696D091A4A8CB7A7FDC27, ); runOnlyForDeploymentPostprocessing = 0; };
 		AAFE4DCF6784ACA26C8576E4 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (6F9E8252511F5C323C43B5EC, ); runOnlyForDeploymentPostprocessing = 0; };
 		1FB05F79ACAACF09DD3FE93A /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (84F9FB37D1CCD4E7EEBA2800, ); runOnlyForDeploymentPostprocessing = 0; };
+		7834CB4EB55EB340EC765364 /* Sources */ = {isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (142339A0164D0C5FB166A49D, ); runOnlyForDeploymentPostprocessing = 0; };
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -196,6 +214,66 @@
 				SKIP_INSTALL = YES;
 				INFOPLIST_FILE = Config/Info-extra.plist;
 			}; name = Release; };
+		12B5784220E6757046F0D951 /* Debug */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace;
+				PRODUCT_NAME = "Live Airspace";
+				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Centres the radar on the aircraft flying near you.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Centres the radar on the aircraft flying near you.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/Mac.entitlements;
+				ENABLE_HARDENED_RUNTIME = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
+			}; name = Debug; };
+		5380085567D8E472B222B3CD /* Release */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
+				SDKROOT = auto;
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx";
+				SUPPORTS_MACCATALYST = NO;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
+				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.bureau.liveairspace;
+				PRODUCT_NAME = "Live Airspace";
+				GENERATE_INFOPLIST_FILE = YES;
+				CODE_SIGN_STYLE = Automatic;
+				MARKETING_VERSION = 1.0;
+				CURRENT_PROJECT_VERSION = 1;
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				INFOPLIST_KEY_CFBundleDisplayName = "Live Airspace";
+				INFOPLIST_KEY_ITSAppUsesNonExemptEncryption = NO;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.travel";
+				INFOPLIST_KEY_NSLocationWhenInUseUsageDescription = "Centres the radar on the aircraft flying near you.";
+				INFOPLIST_KEY_NSLocationUsageDescription = "Centres the radar on the aircraft flying near you.";
+				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
+				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
+				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]" = Config/Mac.entitlements;
+				ENABLE_HARDENED_RUNTIME = YES;
+				LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "$(inherited) @executable_path/../Frameworks";
+			}; name = Release; };
 		8C03164E04BB079EFE54C6B3 /* Debug */ = {isa = XCBuildConfiguration; baseConfigurationReference = AC0549BDB7E61C083806A77F; buildSettings = {
 				SDKROOT = appletvos;
 				SUPPORTED_PLATFORMS = "appletvos appletvsimulator";
@@ -238,6 +316,7 @@
 
 /* Begin XCConfigurationList section */
 		5392007BFEC50494A0BF277A = {isa = XCConfigurationList; buildConfigurations = (AA9D7673BB07B8772C053989, DB9C20A3A1CF18F01C25D9FB, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+		554159F5E49DB8E16D3B3631 = {isa = XCConfigurationList; buildConfigurations = (12B5784220E6757046F0D951, 5380085567D8E472B222B3CD, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		F6C7F1EB411F4A7C02571638 = {isa = XCConfigurationList; buildConfigurations = (39DCF1B9106C85970CFD9D0C, B21D9D8EEDF6EF59D9B227FE, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		672403F131F0631EA95AA052 = {isa = XCConfigurationList; buildConfigurations = (8C03164E04BB079EFE54C6B3, 7FE3654935934A55BEEF41B5, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
 		97429D34B8E890612ADD0039 = {isa = XCConfigurationList; buildConfigurations = (1042CB002A7182A214B595BD, CF6449F5021E876BE1766958, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
@@ -253,6 +332,8 @@
 		D9FFE49F2C39843C83F09A26 /* LiveAirspaceKit */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; };
 		50F393C91AE4335DEE429891 /* LiveAirspaceUI */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceUI; };
 		7EBB2F092305D75FCCACEBF0 /* LiveAirspaceKit */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; };
+		837128E267149B057AFAA0AD /* LiveAirspaceKit */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; };
+		E7A3EB18DD4DB4C3B4C246A5 /* LiveAirspaceUI */ = {isa = XCSwiftPackageProductDependency; productName = LiveAirspaceUI; };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = 4DC844ABCCFC0D132D087C1C /* Project object */;

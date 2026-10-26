@@ -50,4 +50,16 @@ final class SettingsTests: XCTestCase {
         d.place = .custom(name: "Cabin", latitude: 46.1, longitude: -74.2)
         XCTAssertEqual(LiveAirspaceModel.config(for: d, fix: nil).center.longitude, -74.2, accuracy: 0.001)
     }
+
+    func testSettingsFromAnOlderVersionStillDecode() throws {
+        // A payload saved before keepAwake (and before other later keys) existed.
+        let old = #"{"place":{"preset":{"_0":"London LHR"}},"radiusNM":60,"display":{"mapOpacity":0.4,"units":"Metric (m, km\/h, km)"}}"#
+        let decoded = try JSONDecoder().decode(SettingsData.self, from: Data(old.utf8))
+        XCTAssertEqual(decoded.radiusNM, 60)
+        XCTAssertEqual(decoded.display.mapOpacity, 0.4)
+        XCTAssertEqual(decoded.display.units, .metric)
+        XCTAssertFalse(decoded.display.keepAwake)  // new key defaults
+        XCTAssertTrue(decoded.display.showAirports)
+        XCTAssertTrue(decoded.watchRules.isEmpty)
+    }
 }

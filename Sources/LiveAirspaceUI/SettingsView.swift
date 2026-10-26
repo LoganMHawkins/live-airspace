@@ -70,6 +70,9 @@ public struct SettingsView: View {
                     Toggle("Light map", isOn: $settings.data.display.lightMap)
                     Toggle("Airports", isOn: $settings.data.display.showAirports)
                     Toggle("Trails", isOn: $settings.data.display.showTrails)
+                    #if os(iOS)
+                    Toggle("Keep screen awake", isOn: $settings.data.display.keepAwake)
+                    #endif
                 }
 
                 Section("Labels and units") {

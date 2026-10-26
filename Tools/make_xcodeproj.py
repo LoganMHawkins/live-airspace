@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
-"""Generates LiveAirspace.xcodeproj (tvOS app + macOS screen saver, both using the local Swift package)."""
-import hashlib, os
+"""Generates LiveAirspace.xcodeproj: tvOS app (+ Top Shelf), iOS/iPadOS/macOS app and macOS screen saver, all using the local Swift package."""
+import hashlib, html, os
 
 def uid(name): return hashlib.md5(name.encode()).hexdigest()[:24].upper()
 
@@ -18,6 +18,11 @@ bfTvSrc, bfSaverSrc = uid("bfTvSrc"), uid("bfSaverSrc")
 bfTvKit, bfTvUI, bfSaverKit, bfSaverUI = uid("bfTvKit"), uid("bfTvUI"), uid("bfSaverKit"), uid("bfSaverUI")
 grpMain, grpTV, grpSaver, grpProducts = uid("grpMain"), uid("grpTV"), uid("grpSaver"), uid("grpProducts")
 assetsRef, bfAssets, privRef, bfPriv = uid("assetsRef"), uid("bfAssets"), uid("privRef"), uid("bfPriv")
+# iPhone / iPad / Mac app (one multiplatform target)
+iosT, iosRef, iosSrc, bfIosSrc, grpApp = uid("iosT"), uid("iosRef"), uid("iosSrc"), uid("bfIosSrc"), uid("grpApp")
+iosSrcPh, iosFwPh, iosResPh, cfgIos, dIos, rIos = [uid(x) for x in ("iosSrcPh","iosFwPh","iosResPh","cfgIos","dIos","rIos")]
+prodKit4, prodUI4, bfIosKit, bfIosUI = uid("prodKit4"), uid("prodUI4"), uid("bfIosKit"), uid("bfIosUI")
+iosAssetsRef, bfIosAssets, iosPrivRef, bfIosPriv = uid("iosAssetsRef"), uid("bfIosAssets"), uid("iosPrivRef"), uid("bfIosPriv")
 proj = uid("proj")
 tvT, saverT = uid("tvT"), uid("saverT")
 tvSrcPh, tvFwPh, tvResPh = uid("tvSrcPh"), uid("tvFwPh"), uid("tvResPh")
@@ -50,6 +55,11 @@ files = f"""
 \t\t{bfCopyExt} /* Live Airspace Top Shelf.appex in Embed Foundation Extensions */ = {{isa = PBXBuildFile; fileRef = {extRef}; settings = {{ATTRIBUTES = (RemoveHeadersOnCopy, ); }}; }};
 \t\t{bfAssets} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {assetsRef}; }};
 \t\t{bfPriv} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile; fileRef = {privRef}; }};
+\t\t{bfIosSrc} /* LiveAirspaceApp.swift in Sources */ = {{isa = PBXBuildFile; fileRef = {iosSrc}; }};
+\t\t{bfIosKit} /* LiveAirspaceKit in Frameworks */ = {{isa = PBXBuildFile; productRef = {prodKit4}; }};
+\t\t{bfIosUI} /* LiveAirspaceUI in Frameworks */ = {{isa = PBXBuildFile; productRef = {prodUI4}; }};
+\t\t{bfIosAssets} /* Assets.xcassets in Resources */ = {{isa = PBXBuildFile; fileRef = {iosAssetsRef}; }};
+\t\t{bfIosPriv} /* PrivacyInfo.xcprivacy in Resources */ = {{isa = PBXBuildFile; fileRef = {iosPrivRef}; }};
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -63,6 +73,10 @@ files = f"""
 \t\t{extRef} /* Live Airspace Top Shelf.appex */ = {{isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Live Airspace Top Shelf.appex"; sourceTree = BUILT_PRODUCTS_DIR; }};
 \t\t{assetsRef} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; }};
 \t\t{privRef} /* PrivacyInfo.xcprivacy */ = {{isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; }};
+\t\t{iosSrc} /* LiveAirspaceApp.swift */ = {{isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiveAirspaceApp.swift; sourceTree = "<group>"; }};
+\t\t{iosAssetsRef} /* Assets.xcassets */ = {{isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; }};
+\t\t{iosPrivRef} /* PrivacyInfo.xcprivacy */ = {{isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; }};
+\t\t{iosRef} /* Live Airspace.app */ = {{isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Live Airspace.app"; sourceTree = BUILT_PRODUCTS_DIR; }};
 /* End PBXFileReference section */
 
 /* Begin PBXContainerItemProxy section */
@@ -77,14 +91,16 @@ files = f"""
 \t\t{tvFwPh} /* Frameworks */ = {{isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = ({bfTvKit}, {bfTvUI}, ); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{svFwPh} /* Frameworks */ = {{isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = ({bfSaverKit}, {bfSaverUI}, ); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{extFwPh} /* Frameworks */ = {{isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = ({bfExtKit}, ); runOnlyForDeploymentPostprocessing = 0; }};
+\t\t{iosFwPh} /* Frameworks */ = {{isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = ({bfIosKit}, {bfIosUI}, ); runOnlyForDeploymentPostprocessing = 0; }};
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
-\t\t{grpMain} = {{isa = PBXGroup; children = ({grpTV}, {grpExt}, {grpSaver}, {xcfgRef}, {plistRef}, {grpProducts}, ); sourceTree = "<group>"; }};
+\t\t{grpMain} = {{isa = PBXGroup; children = ({grpApp}, {grpTV}, {grpExt}, {grpSaver}, {xcfgRef}, {plistRef}, {grpProducts}, ); sourceTree = "<group>"; }};
 \t\t{grpTV} /* LiveAirspaceTV */ = {{isa = PBXGroup; children = ({tvSrc}, {assetsRef}, {privRef}, ); path = LiveAirspaceTV; sourceTree = "<group>"; }};
 \t\t{grpSaver} /* LiveAirspaceSaver */ = {{isa = PBXGroup; children = ({saverSrc}, ); path = LiveAirspaceSaver; sourceTree = "<group>"; }};
 \t\t{grpExt} /* LiveAirspaceTopShelf */ = {{isa = PBXGroup; children = ({extSrc}, ); path = LiveAirspaceTopShelf; sourceTree = "<group>"; }};
-\t\t{grpProducts} /* Products */ = {{isa = PBXGroup; children = ({tvRef}, {extRef}, {saverRef}, ); name = Products; sourceTree = "<group>"; }};
+\t\t{grpApp} /* LiveAirspaceApp */ = {{isa = PBXGroup; children = ({iosSrc}, {iosAssetsRef}, {iosPrivRef}, ); path = LiveAirspaceApp; sourceTree = "<group>"; }};
+\t\t{grpProducts} /* Products */ = {{isa = PBXGroup; children = ({iosRef}, {tvRef}, {extRef}, {saverRef}, ); name = Products; sourceTree = "<group>"; }};
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
@@ -103,6 +119,11 @@ files = f"""
 \t\t\tbuildRules = (); dependencies = (); name = "Live Airspace Top Shelf"; packageProductDependencies = ({prodKit3}, );
 \t\t\tproductName = LiveAirspaceTopShelf; productReference = {extRef}; productType = "com.apple.product-type.tv-app-extension";
 \t\t}};
+\t\t{iosT} /* Live Airspace (iOS & macOS) */ = {{
+\t\t\tisa = PBXNativeTarget; buildConfigurationList = {cfgIos}; buildPhases = ({iosSrcPh}, {iosFwPh}, {iosResPh}, );
+\t\t\tbuildRules = (); dependencies = (); name = "Live Airspace (iOS & macOS)"; packageProductDependencies = ({prodKit4}, {prodUI4}, );
+\t\t\tproductName = LiveAirspaceApp; productReference = {iosRef}; productType = "com.apple.product-type.application";
+\t\t}};
 /* End PBXNativeTarget section */
 
 /* Begin PBXProject section */
@@ -110,7 +131,7 @@ files = f"""
 \t\t\tisa = PBXProject; attributes = {{BuildIndependentTargetsInParallel = 1; LastSwiftUpdateCheck = 2700; LastUpgradeCheck = 2700;}};
 \t\t\tbuildConfigurationList = {cfgProj}; compatibilityVersion = "Xcode 14.0"; developmentRegion = en; hasScannedForEncodings = 0;
 \t\t\tknownRegions = (en, Base, ); mainGroup = {grpMain}; packageReferences = ({pkg}, ); productRefGroup = {grpProducts};
-\t\t\tprojectDirPath = ""; projectRoot = ""; targets = ({tvT}, {extT}, {saverT}, );
+\t\t\tprojectDirPath = ""; projectRoot = ""; targets = ({iosT}, {tvT}, {extT}, {saverT}, );
 \t\t}};
 /* End PBXProject section */
 
@@ -118,12 +139,14 @@ files = f"""
 \t\t{tvResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({bfAssets}, {bfPriv}, ); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{svResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{extResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; }};
+\t\t{iosResPh} /* Resources */ = {{isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = ({bfIosAssets}, {bfIosPriv}, ); runOnlyForDeploymentPostprocessing = 0; }};
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
 \t\t{tvSrcPh} /* Sources */ = {{isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = ({bfTvSrc}, ); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{svSrcPh} /* Sources */ = {{isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = ({bfSaverSrc}, ); runOnlyForDeploymentPostprocessing = 0; }};
 \t\t{extSrcPh} /* Sources */ = {{isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = ({bfExtSrc}, ); runOnlyForDeploymentPostprocessing = 0; }};
+\t\t{iosSrcPh} /* Sources */ = {{isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = ({bfIosSrc}, ); runOnlyForDeploymentPostprocessing = 0; }};
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
@@ -148,6 +171,22 @@ ext = {"SDKROOT": "appletvos", "SUPPORTED_PLATFORMS": '"appletvos appletvsimulat
        "CODE_SIGN_ENTITLEMENTS": "Config/TopShelf.entitlements", "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO",
        "INFOPLIST_KEY_CFBundleDisplayName": '"Live Airspace Top Shelf"', "SKIP_INSTALL": "YES", "SWIFT_EMIT_LOC_STRINGS": "YES",
        "LD_RUNPATH_SEARCH_PATHS": '"$(inherited) @executable_path/Frameworks @executable_path/../../Frameworks"'}
+ios = {"SDKROOT": "auto", "SUPPORTED_PLATFORMS": '"iphoneos iphonesimulator macosx"', "SUPPORTS_MACCATALYST": "NO",
+       "TARGETED_DEVICE_FAMILY": '"1,2"', "IPHONEOS_DEPLOYMENT_TARGET": "17.0", "MACOSX_DEPLOYMENT_TARGET": "14.0",
+       "PRODUCT_BUNDLE_IDENTIFIER": "com.bureau.liveairspace", "PRODUCT_NAME": '"Live Airspace"',
+       "GENERATE_INFOPLIST_FILE": "YES", "CODE_SIGN_STYLE": "Automatic", "MARKETING_VERSION": "1.0", "CURRENT_PROJECT_VERSION": "1",
+       "ASSETCATALOG_COMPILER_APPICON_NAME": "AppIcon", "SWIFT_EMIT_LOC_STRINGS": "YES",
+       "INFOPLIST_KEY_CFBundleDisplayName": '"Live Airspace"', "INFOPLIST_KEY_ITSAppUsesNonExemptEncryption": "NO",
+       "INFOPLIST_KEY_LSApplicationCategoryType": '"public.app-category.travel"',
+       "INFOPLIST_KEY_NSLocationWhenInUseUsageDescription": '"Centres the radar on the aircraft flying near you."',
+       "INFOPLIST_KEY_NSLocationUsageDescription": '"Centres the radar on the aircraft flying near you."',
+       "INFOPLIST_KEY_UIApplicationSceneManifest_Generation": "YES", "INFOPLIST_KEY_UILaunchScreen_Generation": "YES",
+       "INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents": "YES",
+       "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad": '"UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"',
+       "INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone": '"UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight"',
+       '"CODE_SIGN_ENTITLEMENTS[sdk=macosx*]"': "Config/Mac.entitlements", "ENABLE_HARDENED_RUNTIME": "YES",
+       "LD_RUNPATH_SEARCH_PATHS": '"$(inherited) @executable_path/Frameworks"',
+       '"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]"': '"$(inherited) @executable_path/../Frameworks"'}
 saver = {"SDKROOT": "macosx", "SUPPORTED_PLATFORMS": "macosx", "MACOSX_DEPLOYMENT_TARGET": "14.0",
          "PRODUCT_BUNDLE_IDENTIFIER": "com.bureau.liveairspace.saver", "PRODUCT_NAME": '"Live Airspace"',
          "WRAPPER_EXTENSION": "saver", "MACH_O_TYPE": "mh_bundle", "GENERATE_INFOPLIST_FILE": "YES",
@@ -158,12 +197,15 @@ for (d, r, cfg_name, s) in ((dTV, rTV, "tv", tv), (dSv, rSv, "sv", saver)):
     s = {**s, "INFOPLIST_FILE": "Config/Info-extra.plist"}
     files += f"\t\t{d} /* Debug */ = {{isa = XCBuildConfiguration; baseConfigurationReference = {xcfgRef}; buildSettings = {settings(s)}; name = Debug; }};\n"
     files += f"\t\t{r} /* Release */ = {{isa = XCBuildConfiguration; baseConfigurationReference = {xcfgRef}; buildSettings = {settings(s)}; name = Release; }};\n"
+files += f"\t\t{dIos} /* Debug */ = {{isa = XCBuildConfiguration; baseConfigurationReference = {xcfgRef}; buildSettings = {settings(ios)}; name = Debug; }};\n"
+files += f"\t\t{rIos} /* Release */ = {{isa = XCBuildConfiguration; baseConfigurationReference = {xcfgRef}; buildSettings = {settings(ios)}; name = Release; }};\n"
 files += f"\t\t{dExt} /* Debug */ = {{isa = XCBuildConfiguration; baseConfigurationReference = {xcfgRef}; buildSettings = {settings(ext)}; name = Debug; }};\n"
 files += f"\t\t{rExt} /* Release */ = {{isa = XCBuildConfiguration; baseConfigurationReference = {xcfgRef}; buildSettings = {settings(ext)}; name = Release; }};\n"
 files += f"""/* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
 \t\t{cfgProj} = {{isa = XCConfigurationList; buildConfigurations = ({dProj}, {rProj}, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; }};
+\t\t{cfgIos} = {{isa = XCConfigurationList; buildConfigurations = ({dIos}, {rIos}, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; }};
 \t\t{cfgTV} = {{isa = XCConfigurationList; buildConfigurations = ({dTV}, {rTV}, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; }};
 \t\t{cfgExt} = {{isa = XCConfigurationList; buildConfigurations = ({dExt}, {rExt}, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; }};
 \t\t{cfgSaver} = {{isa = XCConfigurationList; buildConfigurations = ({dSv}, {rSv}, ); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; }};
@@ -179,6 +221,8 @@ files += f"""/* End XCBuildConfiguration section */
 \t\t{prodKit2} /* LiveAirspaceKit */ = {{isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; }};
 \t\t{prodUI2} /* LiveAirspaceUI */ = {{isa = XCSwiftPackageProductDependency; productName = LiveAirspaceUI; }};
 \t\t{prodKit3} /* LiveAirspaceKit */ = {{isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; }};
+\t\t{prodKit4} /* LiveAirspaceKit */ = {{isa = XCSwiftPackageProductDependency; productName = LiveAirspaceKit; }};
+\t\t{prodUI4} /* LiveAirspaceUI */ = {{isa = XCSwiftPackageProductDependency; productName = LiveAirspaceUI; }};
 /* End XCSwiftPackageProductDependency section */
 """
 out = f"// !$*UTF8*$!\n{{\n\tarchiveVersion = 1;\n\tclasses = {{\n\t}};\n\tobjectVersion = 77;\n\tobjects = {{\n{files}\t}};\n\trootObject = {proj} /* Project object */;\n}}\n"
@@ -190,6 +234,7 @@ print("wrote", d)
 
 # Shared schemes, so Xcode lists the app targets (and their devices) without having to auto-create them.
 def scheme(target_id, product, blueprint, ext):
+    blueprint = html.escape(blueprint)  # target names can contain '&'
     return f'''<?xml version="1.0" encoding="UTF-8"?>
 <Scheme LastUpgradeVersion = "2700" version = "1.7">
    <BuildAction parallelizeBuildables = "YES" buildImplicitDependencies = "YES">
@@ -210,5 +255,6 @@ def scheme(target_id, product, blueprint, ext):
 '''
 sd = os.path.join(d, "xcshareddata", "xcschemes")
 os.makedirs(sd, exist_ok=True)
+open(os.path.join(sd, "Live Airspace (iOS & macOS).xcscheme"), "w").write(scheme(iosT, "Live Airspace", "Live Airspace (iOS & macOS)", "app"))
 open(os.path.join(sd, "Live Airspace (tvOS).xcscheme"), "w").write(scheme(tvT, "Live Airspace", "Live Airspace (tvOS)", "app"))
 open(os.path.join(sd, "Live Airspace (Screen Saver).xcscheme"), "w").write(scheme(saverT, "Live Airspace", "Live Airspace (Screen Saver)", "saver"))

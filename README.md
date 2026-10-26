@@ -1,6 +1,6 @@
 # Live Airspace
 
-A radar-style live traffic display for Apple TV, plus a macOS screen saver that hosts the same view.
+A radar-style live traffic display for Apple TV, iPhone, iPad and Mac, plus a macOS screen saver that hosts the same view.
 
 ## What it does
 - **Cross-checks three independent feeds** (adsb.lol, adsb.fi, OpenSky). Reports are matched by ICAO hex, dead-reckoned to
@@ -13,6 +13,11 @@ A radar-style live traffic display for Apple TV, plus a macOS screen saver that 
 - **Dark map underneath** (MapKit), airport markers (OurAirports), non-overlapping labels, altitude legend, fade-in.
 - **Watch rules**: a banner when a chosen airline, type or registration enters range.
 - **Ambient care**: slow drift, map "breathing", idle timer off, for OLED/plasma panels.
+
+## iPhone, iPad and Mac
+- Tap an aircraft to select it (tap empty sky for the nearest again), pinch to zoom the range, and use the control bar for previous/next aircraft, zoom, location and Settings.
+- Keyboard (iPad keyboard, Mac): left/right step through aircraft, up/down or +/- zoom, Esc clears the selection. On the Mac the Airspace menu has the same commands and Settings is under Cmd-comma.
+- Phones get a compact layout: no photo on the info card and no legend. iPhone and iPad can keep the screen awake (Settings).
 
 ## Apple TV controls
 | Remote | Action |
@@ -28,6 +33,7 @@ A radar-style live traffic display for Apple TV, plus a macOS screen saver that 
 | `Sources/LiveAirspaceKit` | Models, feed parsers, merger, polling store, enrichment, airports, watch rules (no UI) |
 | `Sources/LiveAirspaceUI` | SwiftUI `LiveAirspaceView`, settings, model; shared by tvOS and macOS |
 | `LiveAirspaceTV` | tvOS app |
+| `LiveAirspaceApp` | iPhone, iPad and Mac app (one multiplatform SwiftUI target; native macOS, not Catalyst) |
 | `LiveAirspaceTopShelf` | tvOS Top Shelf extension: aircraft overhead, with photos |
 | `LiveAirspaceSaver` | macOS `.saver` bundle (settings sheet: airport/custom coordinates, map, units, watch list) |
 | `Sources/airspace-probe` | CLI: `airspace-probe` prints cross-check stats; `--place "London LHR"`; `--snapshot out.png` renders the view |
@@ -48,13 +54,13 @@ Anonymous OpenSky allows ~400 requests/day (polled every 4 min). With your own A
 The app verifies the client with OpenSky, then keeps it in the device keychain. Nothing is stored in the app bundle or this repository.
 For command-line testing, `airspace-probe` reads `OPENSKY_CLIENT_ID` and `OPENSKY_CLIENT_SECRET` from the environment.
 
-## TestFlight (Apple TV)
-1. In App Store Connect, create an app record: platform **tvOS**, bundle ID `com.bureau.liveairspace` (use your own if you changed it), any SKU.
-2. Run `Tools/testflight.sh`. It archives, signs for distribution and uploads (a new build number each time).
+## TestFlight
+1. In App Store Connect, create an app record with bundle ID `com.bureau.liveairspace` (use your own if you changed it). Add each platform you want to ship (tvOS, iOS, macOS); they share one record and one bundle ID.
+2. Run `Tools/testflight.sh` (Apple TV), `Tools/testflight.sh ios`, `Tools/testflight.sh macos` or `Tools/testflight.sh all`. It archives, signs for distribution and uploads (a new build number each time).
 3. In App Store Connect > TestFlight, wait for processing, then add testers: internal (App Store Connect users, no review) or an external group by email (needs Beta App Review).
 
-The Mac screen saver is not distributed through TestFlight; build and install the `.saver` directly.
-`Tools/make_tvos_icons.swift` regenerates the icon and Top Shelf artwork.
+The Mac screen saver is not distributed through TestFlight; build and install the `.saver` directly. The Mac app is sandboxed (network and location entitlements in `Config/Mac.entitlements`).
+`Tools/make_icons.swift` regenerates the tvOS icon, Top Shelf art and the iPhone/iPad/Mac icon.
 
 ## Notes
 - tvOS has no third-party screen saver API. The tvOS app's ambient mode is the substitute; the Mac `.saver` is a real screen saver.

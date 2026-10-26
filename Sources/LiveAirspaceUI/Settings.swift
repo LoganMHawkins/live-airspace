@@ -49,8 +49,23 @@ public struct DisplaySettings: Codable, Equatable, Sendable {
     public var showTrails = true
     public var labels = LabelMode.all
     public var units = Units.aviation
+    /// iPhone/iPad only: stop the screen sleeping while the radar is showing.
+    public var keepAwake = false
 
     public init() {}
+
+    // Settings written by an older version lack newer keys; fall back to defaults instead of discarding everything.
+    enum CodingKeys: String, CodingKey { case mapOpacity, lightMap, showAirports, showTrails, labels, units, keepAwake }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        mapOpacity = try c.decodeIfPresent(Double.self, forKey: .mapOpacity) ?? 0.7
+        lightMap = try c.decodeIfPresent(Bool.self, forKey: .lightMap) ?? false
+        showAirports = try c.decodeIfPresent(Bool.self, forKey: .showAirports) ?? true
+        showTrails = try c.decodeIfPresent(Bool.self, forKey: .showTrails) ?? true
+        labels = try c.decodeIfPresent(LabelMode.self, forKey: .labels) ?? .all
+        units = try c.decodeIfPresent(Units.self, forKey: .units) ?? .aviation
+        keepAwake = try c.decodeIfPresent(Bool.self, forKey: .keepAwake) ?? false
+    }
 }
 
 public struct SettingsData: Codable, Equatable, Sendable {
@@ -62,6 +77,16 @@ public struct SettingsData: Codable, Equatable, Sendable {
     public var lastFix: AirspaceConfig?
 
     public init() {}
+
+    enum CodingKeys: String, CodingKey { case place, radiusNM, display, watchRules, lastFix }
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        place = try c.decodeIfPresent(Place.self, forKey: .place) ?? .nearMe
+        radiusNM = try c.decodeIfPresent(Double.self, forKey: .radiusNM) ?? 40
+        display = try c.decodeIfPresent(DisplaySettings.self, forKey: .display) ?? DisplaySettings()
+        watchRules = try c.decodeIfPresent([WatchRule].self, forKey: .watchRules) ?? []
+        lastFix = try c.decodeIfPresent(AirspaceConfig.self, forKey: .lastFix)
+    }
 }
 
 /// Persisted user settings. The Apple TV app uses standard defaults; the screen saver uses its module defaults.

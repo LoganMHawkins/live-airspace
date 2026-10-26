@@ -46,7 +46,15 @@ public final class AirspaceStore: ObservableObject {
     private var alerted: Set<String> = []
     @Published public private(set) var trails: [String: [Coordinate]] = [:]
     @Published public var config: AirspaceConfig {
-        didSet { if config != oldValue { restart() } }
+        didSet {
+            guard config != oldValue else { return }
+            if config.center != oldValue.center {
+                restart(keepData: false)
+            } else if config.radiusNM != oldValue.radiusNM {
+                restart(keepData: true)  // same place, new range: keep what's on screen while the feeds refetch
+            }
+            // A renamed airspace (for example "Near you" becoming "Near Toronto") needs no refetch.
+        }
     }
 
     public private(set) var sources: [any AirspaceSource]
@@ -101,17 +109,20 @@ public final class AirspaceStore: ObservableObject {
         tasks.removeAll()
     }
 
-    private func restart() {
+    private func restart(keepData: Bool) {
+        let wasRunning = !tasks.isEmpty
         stop()
-        latest.removeAll()
-        trails.removeAll()
-        requestedDetails.removeAll()
-        selectedID = nil
-        alerted.removeAll()
-        firstSeen.removeAll()
-        activeAlert = nil
-        aircraft = []
-        start()
+        if !keepData {
+            latest.removeAll()
+            trails.removeAll()
+            requestedDetails.removeAll()
+            selectedID = nil
+            alerted.removeAll()
+            firstSeen.removeAll()
+            activeAlert = nil
+            aircraft = []
+        }
+        if wasRunning { start() }
     }
 
     private func poll(_ source: any AirspaceSource) async {
@@ -196,6 +207,11 @@ public final class AirspaceStore: ObservableObject {
     public func select(_ id: String) {
         selectedID = id
         selectionSetAt = Date()
+    }
+
+    /// Back to following the nearest aircraft.
+    public func clearSelection() {
+        selectedID = nil
     }
 
     /// Moves the selection through the aircraft by distance (+1 farther, -1 nearer), wrapping around.

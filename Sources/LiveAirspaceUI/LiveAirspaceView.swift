@@ -1,27 +1,44 @@
 import SwiftUI
 import MapKit
 import LiveAirspaceKit
+#if canImport(UIKit)
+import UIKit
+#endif
 
-/// Full-screen radar-style live traffic display. Shared by the tvOS app and the macOS screen saver.
+/// Full-screen radar-style live traffic display. Shared by the tvOS app, the iOS/iPadOS/macOS app and the macOS screen saver.
 public struct LiveAirspaceView: View {
     @ObservedObject var model: LiveAirspaceModel
     @ObservedObject var store: AirspaceStore
     @ObservedObject var settings: AppSettings
     var ambient: Bool
+    var controlsInset: CGFloat
+    @State private var pinchBase: Double?
 
-    /// - Parameter ambient: slowly drifts the HUD and map and dims static elements to protect OLED/plasma panels.
-    public init(model: LiveAirspaceModel, ambient: Bool = true) {
+    /// - Parameters:
+    ///   - ambient: slowly drifts the HUD and map and dims static elements to protect OLED/plasma panels.
+    ///   - controlsInset: height reserved at the bottom for an app-provided control bar, so cards and the legend sit above it.
+    public init(model: LiveAirspaceModel, ambient: Bool = true, controlsInset: CGFloat = 0) {
         self.model = model
         self.store = model.store
         self.settings = model.settings
         self.ambient = ambient
+        self.controlsInset = controlsInset
     }
 
     public var body: some View {
         let display = settings.data.display
         let focus = store.focus
-        GeometryReader { geo in
-            let scale = max(geo.size.height / 1080, 0.5)
+        // This reader sits inside the safe area so it can report the real insets (notch, status bar, home indicator);
+        // the content below is then laid out over the whole screen, with those insets used to pad the HUD.
+        GeometryReader { outer in
+            let insets = Self.safeInsets(outer.safeAreaInsets)
+            let full = CGSize(width: outer.size.width + outer.safeAreaInsets.leading + outer.safeAreaInsets.trailing,
+                              height: outer.size.height + outer.safeAreaInsets.top + outer.safeAreaInsets.bottom)
+            let geo = (size: full, safeAreaInsets: insets)
+            let scale = displayScale(for: geo.size)
+            let margin = 56 * scale
+            let leading = margin + insets.leading, trailing = margin + insets.trailing
+            let cardWidth = min(568 * scale, geo.size.width - leading - trailing)
             ZStack {
                 if display.mapOpacity > 0 {
                     MapLayer(config: store.config, size: geo.size, ambient: ambient, opacity: display.mapOpacity, light: display.lightMap)
@@ -34,7 +51,8 @@ public struct LiveAirspaceView: View {
                             status: store.status, reliability: store.reliability, feedHealth: store.feedHealth,
                             details: store.details, focusID: focus?.id,
                             airports: display.showAirports ? AirportDatabase.near(store.config.center, radiusNM: store.config.radiusNM * 1.15) : [],
-                            config: store.config, display: display, ambient: ambient
+                            config: store.config, display: display, ambient: ambient,
+                            inset: insets, bottomExtra: controlsInset
                         ).draw()
                     }
                 }
@@ -43,14 +61,16 @@ public struct LiveAirspaceView: View {
                     ZStack {
                         if let alert = store.activeAlert {
                             AlertBanner(alert: alert, scale: scale)
-                                .padding(.top, 150 * scale)
+                                .padding(.top, (isCompact(geo.size) ? 100 : 150) * scale + insets.top)
+                                .padding(.horizontal, margin / 2)
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
                                 .transition(.move(edge: .top).combined(with: .opacity))
                         }
                         if let focus {
                             InfoCard(aircraft: focus, details: store.details[focus.id], config: store.config,
-                                     units: display.units, scale: scale, now: timeline.date)
-                                .padding(56 * scale)
+                                     units: display.units, scale: scale, now: timeline.date,
+                                     width: cardWidth, compact: isCompact(geo.size))
+                                .padding(EdgeInsets(top: 0, leading: leading, bottom: margin + insets.bottom + controlsInset, trailing: trailing))
                                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                         }
                     }
@@ -59,15 +79,85 @@ public struct LiveAirspaceView: View {
                 }
             }
             .frame(width: geo.size.width, height: geo.size.height)
+            .offset(x: -outer.safeAreaInsets.leading, y: -outer.safeAreaInsets.top)
+            #if !os(tvOS)
+            .contentShape(Rectangle())
+            // Tap an aircraft to select it (tap empty sky to go back to the nearest); pinch to change the range.
+            .gesture(SpatialTapGesture().onEnded { select(at: $0.location, size: geo.size) })
+            .gesture(MagnifyGesture()
+                .onChanged { value in
+                    let base = pinchBase ?? settings.data.radiusNM
+                    pinchBase = base
+                    settings.data.radiusNM = min(max((base / value.magnification).rounded(), 10), 150)
+                }
+                .onEnded { _ in pinchBase = nil })
+            #endif
         }
-        .background(Color(red: 0.01, green: 0.02, blue: 0.03))
-        .ignoresSafeArea()
+        .background(Color(red: 0.01, green: 0.02, blue: 0.03).ignoresSafeArea())
         .onAppear { store.start() }
         .onDisappear { store.stop() }
+        #if !os(tvOS)
+        .focusable()
+        .focusEffectDisabled()
+        .onKeyPress(.leftArrow) { store.cycleSelection(-1); return .handled }
+        .onKeyPress(.rightArrow) { store.cycleSelection(1); return .handled }
+        .onKeyPress(.upArrow) { model.zoom(in: true); return .handled }
+        .onKeyPress(.downArrow) { model.zoom(in: false); return .handled }
+        .onKeyPress(characters: CharacterSet(charactersIn: "+=")) { _ in model.zoom(in: true); return .handled }
+        .onKeyPress(characters: CharacterSet(charactersIn: "-_")) { _ in model.zoom(in: false); return .handled }
+        .onKeyPress(.escape) { store.clearSelection(); return .handled }
+        #endif
     }
+
+    /// The Apple TV layout is designed edge to edge with its own margins, so it ignores the (large) tvOS safe area.
+    private static func safeInsets(_ insets: EdgeInsets) -> EdgeInsets {
+        #if os(tvOS)
+        return EdgeInsets()
+        #else
+        return insets
+        #endif
+    }
+
+    #if !os(tvOS)
+    /// Selects the aircraft nearest the touch if it's within about a fingertip; otherwise clears the selection.
+    private func select(at point: CGPoint, size: CGSize) {
+        let center = CGPoint(x: size.width / 2, y: size.height / 2)
+        let pxPerNM = min(size.width, size.height) / 2 * 0.86 / store.config.radiusNM
+        let now = Date()
+        var best: (id: String, distance: CGFloat)?
+        for ac in store.aircraft where !ac.onGround {
+            let o = Geo.offsetNM(from: store.config.center, to: ac.position(at: now))
+            let p = CGPoint(x: center.x + o.east * pxPerNM, y: center.y - o.north * pxPerNM)
+            let d = hypot(p.x - point.x, p.y - point.y)
+            if d < 44, d < (best?.distance ?? .infinity) { best = (ac.id, d) }
+        }
+        if let best { store.select(best.id) } else { store.clearSelection() }
+    }
+    #endif
 }
 
 // MARK: - shared bits
+
+/// Points-per-design-unit. tvOS is laid out for a 1080-point screen seen from a couch, so it scales with the screen;
+/// handheld and desktop use fixed, smaller type.
+func displayScale(for size: CGSize) -> CGFloat {
+    #if os(tvOS)
+    return max(size.height / 1080, 0.5)
+    #elseif os(iOS)
+    return UIDevice.current.userInterfaceIdiom == .pad ? 0.8 : 0.62
+    #else
+    return 0.75
+    #endif
+}
+
+/// Phones (either orientation): shorter text, no photo or legend.
+func isCompact(_ size: CGSize) -> Bool {
+    #if os(tvOS)
+    return false
+    #else
+    return min(size.width, size.height) < 500
+    #endif
+}
 
 /// Slow figure-eight drift, a few points either way, so no pixel stays lit forever.
 func ambientDrift(at date: Date, scale: CGFloat) -> CGSize {
@@ -99,7 +189,7 @@ private struct MapLayer: View {
     var light: Bool
 
     var body: some View {
-        let scale = max(size.height / 1080, 0.5)
+        let scale = displayScale(for: size)
         // Oversized so the drift never exposes an edge.
         let pad = 80 * scale
         let mapSize = CGSize(width: size.width + 2 * pad, height: size.height + 2 * pad)
@@ -159,22 +249,24 @@ private struct InfoCard: View {
     var units: Units
     var scale: CGFloat
     var now: Date
+    var width: CGFloat
+    var compact: Bool
 
     var body: some View {
         let color = aircraft.agreement.isDisputed ? disputedColor : altitudeColor(aircraft.altitudeFt)
         let distance = Geo.distanceNM(config.center, aircraft.position(at: now))
         VStack(alignment: .leading, spacing: 10 * scale) {
-            if let url = details?.photoURL {
+            if !compact, let url = details?.photoURL {
                 AsyncImage(url: url) { phase in
                     switch phase {
                     case .success(let image):
                         image.resizable().aspectRatio(contentMode: .fill)
-                            .frame(width: 520 * scale, height: 230 * scale)
+                            .frame(width: width - 48 * scale, height: 230 * scale)
                             .clipShape(RoundedRectangle(cornerRadius: 14 * scale))
                             .opacity(0.9)
                     case .empty:
                         RoundedRectangle(cornerRadius: 14 * scale).fill(Color.white.opacity(0.05))
-                            .frame(width: 520 * scale, height: 230 * scale)
+                            .frame(width: width - 48 * scale, height: 230 * scale)
                     default:
                         EmptyView()  // photo missing or failed to load: show the card without it
                     }
@@ -206,7 +298,7 @@ private struct InfoCard: View {
                 .foregroundColor(aircraft.agreement.isDisputed ? disputedColor : ink.opacity(0.55))
         }
         .padding(24 * scale)
-        .frame(width: 568 * scale, alignment: .leading)
+        .frame(width: width, alignment: .leading)
         .background(RoundedRectangle(cornerRadius: 22 * scale).fill(Color.black.opacity(0.6)))
         .overlay(RoundedRectangle(cornerRadius: 22 * scale).stroke(color.opacity(0.35), lineWidth: 1.5 * scale))
     }
@@ -251,8 +343,16 @@ private struct Renderer {
     var config: AirspaceConfig
     var display: DisplaySettings
     var ambient: Bool
+    var inset: EdgeInsets
+    var bottomExtra: CGFloat
 
-    private var scale: CGFloat { max(size.height / 1080, 0.5) }
+    private var scale: CGFloat { displayScale(for: size) }
+    private var compact: Bool { isCompact(size) }
+    /// Distance from each screen edge to the HUD: the standard margin plus the device safe area (and the app's control bar at the bottom).
+    private var edge: (l: CGFloat, t: CGFloat, r: CGFloat, b: CGFloat) {
+        let m = 56 * scale
+        return (m + inset.leading, m + inset.top, m + inset.trailing, m + inset.bottom + bottomExtra)
+    }
     private var drift: CGSize { ambient ? ambientDrift(at: now, scale: scale) : .zero }
 
     private struct Placed {
@@ -322,7 +422,9 @@ private struct Renderer {
         // Reserve every aircraft icon so labels never cover a neighbour.
         var rects = result.map { CGRect(x: $0.point.x - s * 1.2, y: $0.point.y - s * 1.2, width: s * 2.4, height: s * 2.4) }
         // Keep labels clear of the info card in the bottom-right corner (card is 568 wide and about 600 tall with a photo).
-        rects.append(CGRect(x: size.width - 56 * scale - 568 * scale, y: size.height - 56 * scale - 620 * scale, width: 568 * scale, height: 620 * scale))
+        let e = edge
+        let cardW = min(568 * scale, size.width - e.l - e.r), cardH = (compact ? 330 : 620) * scale
+        rects.append(CGRect(x: size.width - e.r - cardW, y: size.height - e.b - cardH, width: cardW, height: cardH))
         let bounds = CGRect(origin: .zero, size: size).insetBy(dx: 20 * scale, dy: 20 * scale)
 
         let order = result.indices.sorted { a, b in
@@ -519,28 +621,28 @@ private struct Renderer {
     // MARK: HUD
 
     private func drawHUD(_ ctx: inout GraphicsContext, visible: [Aircraft]) {
-        let margin = 56 * scale
+        let e = edge
         ctx.draw(Text(config.name.uppercased()).font(.system(size: 34 * scale, weight: .bold, design: .monospaced)).foregroundColor(ink.opacity(0.85)),
-                 at: CGPoint(x: margin, y: margin), anchor: .topLeading)
+                 at: CGPoint(x: e.l, y: e.t), anchor: .topLeading)
         let confirmed = visible.filter { $0.sources.count > 1 && !$0.agreement.isDisputed }.count
         let disputed = visible.filter { $0.agreement.isDisputed }.count
-        var summary = "\(visible.count) aircraft · \(confirmed) cross-checked"
+        var summary = compact ? "\(visible.count) aircraft" : "\(visible.count) aircraft · \(confirmed) cross-checked"
         if disputed > 0 { summary += " · \(disputed) disputed" }
         ctx.draw(Text(summary).font(.system(size: 22 * scale, design: .monospaced)).foregroundColor(ink.opacity(0.55)),
-                 at: CGPoint(x: margin, y: margin + 46 * scale), anchor: .topLeading)
+                 at: CGPoint(x: e.l, y: e.t + 46 * scale), anchor: .topLeading)
 
         // Source health, with how often each source has been the odd one out.
-        var y = margin
+        var y = e.t
         for id in SourceID.allCases.reversed() {
             let st = status[id]
             let live = st?.isLive(at: now) ?? false
             let dot = live ? Color(red: 0.4, green: 0.95, blue: 0.6) : Color(red: 1, green: 0.5, blue: 0.4)
             var text = live ? "\(id.rawValue)  \(st?.aircraftCount ?? 0)" : "\(id.rawValue)  \(st?.lastError ?? "connecting")"
-            if live, let r = reliability[id] { text += "  \(Int((r * 100).rounded()))%" }
+            if live, !compact, let r = reliability[id] { text += "  \(Int((r * 100).rounded()))%" }
             let resolved = ctx.resolve(Text(text).font(.system(size: 20 * scale, design: .monospaced)).foregroundColor(ink.opacity(0.55)))
             let w = resolved.measure(in: CGSize(width: 700, height: 60)).width
-            ctx.draw(resolved, at: CGPoint(x: size.width - margin, y: y), anchor: .topTrailing)
-            ctx.fill(Path(ellipseIn: CGRect(x: size.width - margin - w - 22 * scale, y: y + 5 * scale, width: 12 * scale, height: 12 * scale)),
+            ctx.draw(resolved, at: CGPoint(x: size.width - e.r, y: y), anchor: .topTrailing)
+            ctx.fill(Path(ellipseIn: CGRect(x: size.width - e.r - w - 22 * scale, y: y + 5 * scale, width: 12 * scale, height: 12 * scale)),
                      with: .color(dot.opacity(0.9)))
             y += 30 * scale
         }
@@ -549,16 +651,17 @@ private struct Renderer {
         switch feedHealth {
         case .down:
             ctx.draw(Text("NO LIVE DATA · feeds unreachable").font(.system(size: 22 * scale, weight: .bold, design: .monospaced)).foregroundColor(disputedColor),
-                     at: CGPoint(x: size.width - margin, y: y + 8 * scale), anchor: .topTrailing)
+                     at: CGPoint(x: size.width - e.r, y: y + 8 * scale), anchor: .topTrailing)
         case .degraded:
             ctx.draw(Text("Reduced cross-checking").font(.system(size: 18 * scale, design: .monospaced)).foregroundColor(Color(red: 1, green: 0.8, blue: 0.4).opacity(0.8)),
-                     at: CGPoint(x: size.width - margin, y: y + 8 * scale), anchor: .topTrailing)
+                     at: CGPoint(x: size.width - e.r, y: y + 8 * scale), anchor: .topTrailing)
         case .live: break
         }
     }
 
     private func drawLegend(_ ctx: inout GraphicsContext) {
-        let margin = 56 * scale
+        guard !compact else { return }  // no room on a phone
+        let e = edge
         let u = display.units
         let rows: [(Color, String)] = [
             (altitudeColor(2_000), "below \(u.altitude(5_000))"),
@@ -567,20 +670,20 @@ private struct Renderer {
             (altitudeColor(35_000), "above \(u.altitude(30_000))"),
         ]
         let rowH = 28 * scale
-        var y = size.height - margin - rowH * CGFloat(rows.count + 2)
+        var y = size.height - e.b - rowH * CGFloat(rows.count + 2)
         for (color, text) in rows {
-            ctx.fill(Path(ellipseIn: CGRect(x: margin, y: y + 6 * scale, width: 14 * scale, height: 14 * scale)), with: .color(color.opacity(0.9)))
+            ctx.fill(Path(ellipseIn: CGRect(x: e.l, y: y + 6 * scale, width: 14 * scale, height: 14 * scale)), with: .color(color.opacity(0.9)))
             ctx.draw(Text(text).font(.system(size: 18 * scale, design: .monospaced)).foregroundColor(ink.opacity(0.5)),
-                     at: CGPoint(x: margin + 26 * scale, y: y), anchor: .topLeading)
+                     at: CGPoint(x: e.l + 26 * scale, y: y), anchor: .topLeading)
             y += rowH
         }
-        ctx.stroke(Path(ellipseIn: CGRect(x: margin, y: y + 5 * scale, width: 16 * scale, height: 16 * scale)), with: .color(ink.opacity(0.5)), lineWidth: 1.5 * scale)
+        ctx.stroke(Path(ellipseIn: CGRect(x: e.l, y: y + 5 * scale, width: 16 * scale, height: 16 * scale)), with: .color(ink.opacity(0.5)), lineWidth: 1.5 * scale)
         ctx.draw(Text("2+ sources agree").font(.system(size: 18 * scale, design: .monospaced)).foregroundColor(ink.opacity(0.5)),
-                 at: CGPoint(x: margin + 26 * scale, y: y), anchor: .topLeading)
+                 at: CGPoint(x: e.l + 26 * scale, y: y), anchor: .topLeading)
         y += rowH
-        ctx.stroke(Path(ellipseIn: CGRect(x: margin, y: y + 5 * scale, width: 16 * scale, height: 16 * scale)), with: .color(disputedColor),
+        ctx.stroke(Path(ellipseIn: CGRect(x: e.l, y: y + 5 * scale, width: 16 * scale, height: 16 * scale)), with: .color(disputedColor),
                    style: StrokeStyle(lineWidth: 1.5 * scale, dash: [3 * scale, 3 * scale]))
         ctx.draw(Text("sources disagree").font(.system(size: 18 * scale, design: .monospaced)).foregroundColor(ink.opacity(0.5)),
-                 at: CGPoint(x: margin + 26 * scale, y: y), anchor: .topLeading)
+                 at: CGPoint(x: e.l + 26 * scale, y: y), anchor: .topLeading)
     }
 }
